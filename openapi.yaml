@@ -1,0 +1,330 @@
+openapi: 3.0.0
+info:
+  title: FlexCatalog CMS API
+  description: API for managing hierarchical elements, schema types, roles, and graph relationships.
+  version: 1.0.0
+servers:
+  - url: /api
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                email: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: User registered successfully
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: Login successful
+  /auth/logout:
+    post:
+      summary: Logout
+      tags: [Auth]
+      responses:
+        200:
+          description: Logout successful
+  /auth/reset-password:
+    post:
+      summary: Reset password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                newPassword: { type: string }
+      responses:
+        200:
+          description: Password reset successful
+  /me:
+    get:
+      summary: Get current user info
+      tags: [Auth]
+      responses:
+        200:
+          description: Current user data
+  /users:
+    get:
+      summary: Get all users (Admin only)
+      tags: [Users]
+      responses:
+        200:
+          description: List of users
+  /users/{id}/role:
+    put:
+      summary: Update user role (Admin only)
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role_id: { type: integer }
+      responses:
+        200:
+          description: Role updated
+  /roles:
+    get:
+      summary: Get all roles (Admin only)
+      tags: [Roles]
+      responses:
+        200:
+          description: List of roles with permissions
+  /roles/{id}/permissions:
+    put:
+      summary: Update role global permissions (Admin only)
+      tags: [Roles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permission_ids: { type: array, items: { type: integer } }
+      responses:
+        200:
+          description: Permissions updated
+  /roles/{id}/type-permissions/{type_id}:
+    put:
+      summary: Update role type permissions (Admin only)
+      tags: [Roles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: type_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                can_view: { type: boolean }
+                can_create: { type: boolean }
+                can_edit: { type: boolean }
+                can_delete: { type: boolean }
+      responses:
+        200:
+          description: Type permissions updated
+  /permissions:
+    get:
+      summary: Get all available permissions (Admin only)
+      tags: [Roles]
+      responses:
+        200:
+          description: List of permissions
+  /types:
+    get:
+      summary: Get all element types
+      tags: [Schema]
+      responses:
+        200:
+          description: List of types
+    post:
+      summary: Create a new element type (Admin only)
+      tags: [Schema]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                properties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      table_name: { type: string }
+                      label: { type: string }
+      responses:
+        200:
+          description: Type created
+  /types/{id}:
+    delete:
+      summary: Delete an element type (Admin only)
+      tags: [Schema]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Type deleted
+  /elements:
+    get:
+      summary: Get all elements (Filtered by view permission)
+      tags: [Elements]
+      responses:
+        200:
+          description: List of elements
+    post:
+      summary: Create a new element
+      tags: [Elements]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                type_id: { type: integer }
+                parent_id: { type: integer }
+                modular_data: { type: object }
+      responses:
+        200:
+          description: Element created
+  /elements/{id}:
+    get:
+      summary: Get a single element with modular data
+      tags: [Elements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Element data
+    put:
+      summary: Update an element
+      tags: [Elements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                parent_id: { type: integer }
+                modular_data: { type: object }
+      responses:
+        200:
+          description: Element updated
+    delete:
+      summary: Delete an element
+      tags: [Elements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Element deleted
+  /relationship-types:
+    get:
+      summary: Get all relationship types
+      tags: [Relationships]
+      responses:
+        200:
+          description: List of relationship types
+    post:
+      summary: Create a new relationship type (Admin only)
+      tags: [Relationships]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source_type_id: { type: integer }
+                target_type_id: { type: integer }
+                name: { type: string }
+      responses:
+        200:
+          description: Relationship type created
+  /relationship-types/{id}:
+    delete:
+      summary: Delete a relationship type (Admin only)
+      tags: [Relationships]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Relationship type deleted
+  /graph:
+    get:
+      summary: Get all graph edges
+      tags: [Relationships]
+      responses:
+        200:
+          description: List of graph edges
+    post:
+      summary: Create a new graph edge (Link elements)
+      tags: [Relationships]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rel_type_id: { type: integer }
+                source_el_id: { type: integer }
+                target_el_id: { type: integer }
+      responses:
+        200:
+          description: Edge created
+  /graph/{id}:
+    delete:
+      summary: Delete a graph edge
+      tags: [Relationships]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Edge deleted

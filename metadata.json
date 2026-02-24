@@ -1,0 +1,5 @@
+{
+  "name": "FlexCatalog CMS",
+  "description": "A flexible PIM/CMS with dynamic element types and modular properties.",
+  "requestFramePermissions": ["geolocation"]
+}
