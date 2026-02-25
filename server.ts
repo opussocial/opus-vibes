@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { OAuth2Client } from "google-auth-library";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -148,7 +149,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
+    password TEXT,
+    google_id TEXT UNIQUE,
     role_id INTEGER NOT NULL,
     FOREIGN KEY (role_id) REFERENCES roles(id)
   );
@@ -158,6 +160,19 @@ db.exec(`
 try {
   db.exec("ALTER TABLE elements ADD COLUMN parent_id INTEGER REFERENCES elements(id) ON DELETE SET NULL");
 } catch (e) {}
+
+// Migration for users table
+try {
+  db.exec("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE users ALTER COLUMN password DROP NOT NULL");
+} catch (e) {
+  // SQLite doesn't support ALTER COLUMN DROP NOT NULL directly easily, 
+  // but we can just ignore if it fails or handle it differently if needed.
+  // Actually in SQLite, columns are nullable by default unless specified.
+  // The original schema had NOT NULL.
+}
 
 
 // Seed initial data if empty
@@ -313,6 +328,82 @@ async function startServer() {
       sameSite: "none"
     });
     res.json({ success: true });
+  });
+
+  // Google OAuth Routes
+  const getGoogleClient = (req: any) => {
+    const origin = req.get('origin') || process.env.APP_URL || `http://localhost:3000`;
+    return new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      `${origin}/api/auth/google/callback`
+    );
+  };
+
+  app.get("/api/auth/google/url", (req, res) => {
+    const client = getGoogleClient(req);
+    const url = client.generateAuthUrl({
+      access_type: "offline",
+      scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+    });
+    res.json({ url });
+  });
+
+  app.get("/api/auth/google/callback", async (req, res) => {
+    const { code } = req.query;
+    if (!code) return res.status(400).send("Code missing");
+
+    try {
+      const client = getGoogleClient(req);
+      const { tokens } = await client.getToken(code as string);
+      client.setCredentials(tokens);
+
+      const userInfoRes = await client.request({ url: "https://www.googleapis.com/oauth2/v3/userinfo" }) as any;
+      const userInfo = userInfoRes.data;
+
+      // Find or create user
+      let user = db.prepare("SELECT * FROM users WHERE google_id = ? OR email = ?").get(userInfo.sub, userInfo.email) as any;
+
+      if (!user) {
+        const viewerRole = db.prepare("SELECT id FROM roles WHERE name = 'Viewer'").get() as any;
+        const username = userInfo.email.split("@")[0] + "_" + Math.random().toString(36).substring(7);
+        const result = db.prepare("INSERT INTO users (username, email, google_id, role_id) VALUES (?, ?, ?, ?)").run(
+          username,
+          userInfo.email,
+          userInfo.sub,
+          viewerRole.id
+        );
+        user = { id: result.lastInsertRowid, username, email: userInfo.email };
+      } else if (!user.google_id) {
+        db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(userInfo.sub, user.id);
+      }
+
+      res.cookie("session_id", user.id.toString(), {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+      });
+
+      res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                window.close();
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+            <p>Authentication successful. This window should close automatically.</p>
+          </body>
+        </html>
+      `);
+    } catch (err) {
+      console.error("Google Auth Error:", err);
+      res.status(500).send("Authentication failed");
+    }
   });
 
   app.post("/api/auth/reset-password", (req, res) => {

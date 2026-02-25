@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Database, Shield, Lock, Users, Mail, Key } from "lucide-react";
+import { Database, Shield, Lock, Users, Mail, Key, Chrome } from "lucide-react";
 import { User } from "../types";
 
 interface AuthScreenProps {
@@ -14,6 +14,35 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Validate origin
+      const origin = event.origin;
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
+        return;
+      }
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        fetch("/api/me")
+          .then(res => res.json())
+          .then(user => {
+            if (user) onLogin(user);
+          });
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onLogin]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/google/url");
+      const { url } = await res.json();
+      window.open(url, "google_login", "width=600,height=700");
+    } catch (err) {
+      setError("Failed to initialize Google login");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,6 +168,24 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
              mode === "login" ? "Login" : 
              mode === "register" ? "Create Account" : 
              "Reset Password"}
+          </button>
+
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-zinc-400 font-bold">Or continue with</span>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full py-4 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-bold hover:bg-zinc-50 transition-all flex items-center justify-center gap-3 shadow-sm"
+          >
+            <Chrome size={20} className="text-blue-500" />
+            Google
           </button>
 
           <div className="pt-4 text-center space-y-2">
