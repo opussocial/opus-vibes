@@ -9,9 +9,10 @@ interface DashboardProps {
   getTypePermission: (typeId: number) => TypePermission;
   handleEdit: (id: number) => void;
   handleDelete: (id: number) => void;
+  handleView: (id: number) => void;
 }
 
-export const Dashboard = ({ elements, getTypePermission, handleEdit, handleDelete }: DashboardProps) => {
+export const Dashboard = ({ elements, getTypePermission, handleEdit, handleDelete, handleView }: DashboardProps) => {
   return (
     <motion.div
       key="dashboard"
@@ -68,25 +69,27 @@ export const Dashboard = ({ elements, getTypePermission, handleEdit, handleDelet
                 </div>
               </div>
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                {perm.can_edit ? (
+                <button 
+                  onClick={() => handleView(el.id)}
+                  className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
+                  title="View Details"
+                >
+                  <Eye size={18} />
+                </button>
+                {perm.can_edit && (
                   <button 
                     onClick={() => handleEdit(el.id)}
                     className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
+                    title="Edit"
                   >
                     <Edit3 size={18} />
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => handleEdit(el.id)}
-                    className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-400 transition-colors"
-                  >
-                    <Eye size={18} />
                   </button>
                 )}
                 {perm.can_delete && (
                   <button 
                     onClick={() => handleDelete(el.id)}
                     className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                    title="Delete"
                   >
                     <Trash2 size={18} />
                   </button>

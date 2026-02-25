@@ -79,6 +79,25 @@ export interface Permission {
   description: string;
 }
 
+export interface InteractionType {
+  id: number;
+  name: string;
+  icon: string;
+  description: string;
+}
+
+export interface Interaction {
+  id: number;
+  element_id: number;
+  user_id: number;
+  type_id: number;
+  content?: string;
+  created_at: string;
+  username: string;
+  type_name: string;
+  type_icon: string;
+}
+
 export const MODULAR_TABLES = [
   { value: "content", label: "Text Content", fields: ["body"] },
   { value: "place", label: "Location/Geo", fields: ["latitude", "longitude", "address"] },

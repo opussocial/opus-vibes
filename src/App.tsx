@@ -24,6 +24,7 @@ import { Roles } from "./components/Roles";
 import { Users as UsersScreen } from "./components/Users";
 import { Relationships } from "./components/Relationships";
 import { ElementEditor } from "./components/ElementEditor";
+import { ElementView } from "./components/ElementView";
 
 export default function App() {
   const [view, setView] = useState<"dashboard" | "types" | "roles" | "users" | "relationships">("dashboard");
@@ -37,6 +38,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingElement, setEditingElement] = useState<ElementDetail | null>(null);
+  const [viewingElementId, setViewingElementId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedType, setSelectedType] = useState<ElementType | null>(null);
   const [isCreatingType, setIsCreatingType] = useState(false);
@@ -399,6 +401,7 @@ export default function App() {
               getTypePermission={getTypePermission}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
+              handleView={(id) => setViewingElementId(id)}
             />
           ) : view === "types" ? (
             <SchemaTypes 
@@ -464,6 +467,17 @@ export default function App() {
             elements={elements}
             handleSave={handleSave}
             getTypePermission={getTypePermission}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* View Modal */}
+      <AnimatePresence>
+        {viewingElementId && currentUser && (
+          <ElementView 
+            elementId={viewingElementId}
+            currentUser={currentUser}
+            onClose={() => setViewingElementId(null)}
           />
         )}
       </AnimatePresence>
