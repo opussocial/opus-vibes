@@ -62,6 +62,25 @@ paths:
       responses:
         200:
           description: Password reset successful
+  /auth/google/url:
+    get:
+      summary: Get Google OAuth URL
+      tags: [Auth]
+      responses:
+        200:
+          description: Returns the Google authorization URL
+  /auth/google/callback:
+    get:
+      summary: Google OAuth callback
+      tags: [Auth]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Authentication successful
   /me:
     get:
       summary: Get current user info
@@ -260,6 +279,56 @@ paths:
       responses:
         200:
           description: Element deleted
+  /elements/{id}/interactions:
+    get:
+      summary: Get interactions for an element
+      tags: [Interactions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: List of interactions
+    post:
+      summary: Create an interaction (like, favorite, comment)
+      tags: [Interactions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type_id: { type: integer }
+                content: { type: string }
+      responses:
+        200:
+          description: Interaction created
+  /interactions/{id}:
+    delete:
+      summary: Delete an interaction
+      tags: [Interactions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Interaction deleted
+  /interaction-types:
+    get:
+      summary: Get all interaction types
+      tags: [Interactions]
+      responses:
+        200:
+          description: List of interaction types
   /relationship-types:
     get:
       summary: Get all relationship types

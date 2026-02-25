@@ -195,6 +195,110 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Interactions",
+			"item": [
+				{
+					"name": "Get Interaction Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/interaction-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "interaction-types"]
+						}
+					}
+				},
+				{
+					"name": "Get Element Interactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/elements/1/interactions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "elements", "1", "interactions"]
+						}
+					}
+				},
+				{
+					"name": "Create Interaction",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type_id\": 3,\n    \"content\": \"Great element!\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/elements/1/interactions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "elements", "1", "interactions"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "roles"]
+						}
+					}
+				},
+				{
+					"name": "Get Permissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "permissions"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Graph",
+			"item": [
+				{
+					"name": "Get Graph",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/graph",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "graph"]
+						}
+					}
+				}
+			]
 		}
 	],
 	"event": [
