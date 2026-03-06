@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
+import { slugify } from "./utils";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS element_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
       description TEXT
     );
 
@@ -29,6 +31,7 @@ export function initDb() {
       type_id INTEGER NOT NULL,
       parent_id INTEGER,
       name TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE,
@@ -104,6 +107,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
       description TEXT
     );
 
@@ -175,28 +179,47 @@ export function initDb() {
   try { db.exec("ALTER TABLE elements ADD COLUMN parent_id INTEGER REFERENCES elements(id) ON DELETE SET NULL"); } catch (e) {}
   try { db.exec("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE"); } catch (e) {}
   try { db.exec("ALTER TABLE users ALTER COLUMN password DROP NOT NULL"); } catch (e) {}
+  
+  // Slug Migrations
+  try { db.exec("ALTER TABLE element_types ADD COLUMN slug TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE elements ADD COLUMN slug TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE roles ADD COLUMN slug TEXT"); } catch (e) {}
+
+  // Fill existing slugs if null
+  const types = db.prepare("SELECT id, name FROM element_types WHERE slug IS NULL").all() as any[];
+  for (const t of types) {
+    db.prepare("UPDATE element_types SET slug = ? WHERE id = ?").run(slugify(t.name), t.id);
+  }
+  const els = db.prepare("SELECT id, name FROM elements WHERE slug IS NULL").all() as any[];
+  for (const e of els) {
+    db.prepare("UPDATE elements SET slug = ? WHERE id = ?").run(slugify(e.name) + "-" + e.id, e.id);
+  }
+  const rs = db.prepare("SELECT id, name FROM roles WHERE slug IS NULL").all() as any[];
+  for (const r of rs) {
+    db.prepare("UPDATE roles SET slug = ? WHERE id = ?").run(slugify(r.name), r.id);
+  }
 
   // Seeding
   const typeCount = db.prepare("SELECT COUNT(*) as count FROM element_types").get() as { count: number };
   if (typeCount.count === 0) {
-    const insertType = db.prepare("INSERT INTO element_types (name, description) VALUES (?, ?)");
+    const insertType = db.prepare("INSERT INTO element_types (name, slug, description) VALUES (?, ?, ?)");
     const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
 
-    const articleType = insertType.run("Article", "A standard blog post or news article").lastInsertRowid;
+    const articleType = insertType.run("Article", "article", "A standard blog post or news article").lastInsertRowid;
     insertProp.run(articleType, "content", "Main Content");
     insertProp.run(articleType, "urls_embeds", "Related Links");
 
-    const productType = insertType.run("Product", "An item in the catalog").lastInsertRowid;
+    const productType = insertType.run("Product", "product", "An item in the catalog").lastInsertRowid;
     insertProp.run(productType, "product_info", "Product Details");
     insertProp.run(productType, "content", "Description");
     insertProp.run(productType, "file", "Product Image");
 
-    const eventType = insertType.run("Event", "A scheduled gathering").lastInsertRowid;
+    const eventType = insertType.run("Event", "event", "A scheduled gathering").lastInsertRowid;
     insertProp.run(eventType, "content", "Event Description");
     insertProp.run(eventType, "place", "Location");
     insertProp.run(eventType, "time_tracking", "Schedule");
 
-    const categoryType = insertType.run("Category", "A grouping for other elements").lastInsertRowid;
+    const categoryType = insertType.run("Category", "category", "A grouping for other elements").lastInsertRowid;
     insertProp.run(categoryType, "content", "Category Description");
 
     // Hierarchy: Articles can be under Categories or other Articles
@@ -206,9 +229,9 @@ export function initDb() {
     insertHierarchy.run(categoryType, productType);
     insertHierarchy.run(categoryType, categoryType); // Nested categories
 
-    const adminRole = db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Super Admin", "Full system access").lastInsertRowid;
-    const editorRole = db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Editor", "Can manage content but not schema").lastInsertRowid;
-    const viewerRole = db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Viewer", "Read-only access").lastInsertRowid;
+    const adminRole = db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Super Admin", "super-admin", "Full system access").lastInsertRowid;
+    const editorRole = db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Editor", "editor", "Can manage content but not schema").lastInsertRowid;
+    const viewerRole = db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Viewer", "viewer", "Read-only access").lastInsertRowid;
 
     const manageTypes = db.prepare("INSERT INTO permissions (name, description) VALUES (?, ?)").run("manage_types", "Can create and edit element types").lastInsertRowid;
     const manageRoles = db.prepare("INSERT INTO permissions (name, description) VALUES (?, ?)").run("manage_roles", "Can manage roles and permissions").lastInsertRowid;
@@ -234,15 +257,15 @@ export function initDb() {
     insertInteractionType.run("comment", "MessageSquare", "Users can leave comments");
 
     // Seed Sample Elements
-    const articleId = db.prepare("INSERT INTO elements (name, type_id) VALUES (?, ?)").run("Welcome to FlexCatalog", articleType).lastInsertRowid;
+    const articleId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Welcome to FlexCatalog", "welcome-to-flexcatalog", articleType).lastInsertRowid;
     db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(articleId, "This is your first modular element. You can edit it to see how the modular data system works.");
     db.prepare("INSERT INTO urls_embeds (element_id, url, title) VALUES (?, ?, ?)").run(articleId, "https://github.com", "Project Source");
 
-    const productId = db.prepare("INSERT INTO elements (name, type_id) VALUES (?, ?)").run("Premium Subscription", productType).lastInsertRowid;
+    const productId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Premium Subscription", "premium-subscription", productType).lastInsertRowid;
     db.prepare("INSERT INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(productId, "SUB-001", 99.99, "USD", 1000);
     db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(productId, "Get full access to all features with our premium plan.");
 
-    const eventId = db.prepare("INSERT INTO elements (name, type_id) VALUES (?, ?)").run("Launch Party", eventType).lastInsertRowid;
+    const eventId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Launch Party", "launch-party", eventType).lastInsertRowid;
     db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(eventId, "Join us for the official launch of FlexCatalog CMS!");
     db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(eventId, 37.7749, -122.4194, "San Francisco, CA");
     db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time, duration) VALUES (?, ?, ?, ?)").run(eventId, "2024-12-01 18:00:00", "2024-12-01 22:00:00", 240);
@@ -253,7 +276,7 @@ export function initDb() {
   if (adminCount.count === 0) {
     let adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
     if (!adminRole) {
-      adminRole = { id: db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Super Admin", "Full system access").lastInsertRowid };
+      adminRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Super Admin", "super-admin", "Full system access").lastInsertRowid };
     }
     const hashedPassword = bcrypt.hashSync("password123", 10);
     db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole.id);

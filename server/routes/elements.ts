@@ -1,6 +1,7 @@
 import express from "express";
 import { db } from "../db";
 import { requireAuth, checkTypePermission } from "../middleware";
+import { slugify } from "../utils";
 
 const router = express.Router();
 
@@ -21,11 +22,12 @@ router.get("/elements", requireAuth, (req: any, res) => {
 });
 
 router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), (req, res) => {
+  const isId = /^\d+$/.test(req.params.id);
   const element = db.prepare(`
     SELECT e.*, t.name as type_name 
     FROM elements e 
     JOIN element_types t ON e.type_id = t.id
-    WHERE e.id = ?
+    WHERE e.${isId ? "id" : "slug"} = ?
   `).get(req.params.id) as any;
 
   if (!element) return res.status(404).json({ error: "Element not found" });
@@ -42,9 +44,17 @@ router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), (req, 
 
 router.post("/elements", requireAuth, checkTypePermission("can_create"), (req, res) => {
   const { name, type_id, parent_id, modular_data } = req.body;
+  const baseSlug = slugify(name);
   try {
     const transaction = db.transaction(() => {
-      const elementId = db.prepare("INSERT INTO elements (name, type_id, parent_id) VALUES (?, ?, ?)").run(name, type_id, parent_id).lastInsertRowid;
+      // Ensure unique slug
+      let slug = baseSlug;
+      let counter = 1;
+      while (db.prepare("SELECT id FROM elements WHERE slug = ?").get(slug)) {
+        slug = `${baseSlug}-${counter++}`;
+      }
+
+      const elementId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run(name, slug, type_id, parent_id).lastInsertRowid;
       const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(type_id) as any[];
       for (const prop of props) {
         const table = prop.table_name;
@@ -70,11 +80,15 @@ router.post("/elements", requireAuth, checkTypePermission("can_create"), (req, r
 
 router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), (req, res) => {
   const { name, parent_id, modular_data } = req.body;
-  const elementId = req.params.id;
+  const idOrSlug = req.params.id;
+  const isId = /^\d+$/.test(idOrSlug);
   try {
     const transaction = db.transaction(() => {
+      const element = db.prepare(`SELECT id, type_id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(idOrSlug) as any;
+      if (!element) throw new Error("Element not found");
+      const elementId = element.id;
+
       db.prepare("UPDATE elements SET name = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(name, parent_id, elementId);
-      const element = db.prepare("SELECT type_id FROM elements WHERE id = ?").get(elementId) as any;
       const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(element.type_id) as any[];
       for (const prop of props) {
         const table = prop.table_name;
@@ -96,7 +110,8 @@ router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), (req, 
 
 router.delete("/elements/:id", requireAuth, checkTypePermission("can_delete"), (req, res) => {
   try {
-    db.prepare("DELETE FROM elements WHERE id = ?").run(req.params.id);
+    const isId = /^\d+$/.test(req.params.id);
+    db.prepare(`DELETE FROM elements WHERE ${isId ? "id" : "slug"} = ?`).run(req.params.id);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

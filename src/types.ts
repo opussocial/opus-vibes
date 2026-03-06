@@ -1,6 +1,7 @@
 export interface ElementType {
   id: number;
   name: string;
+  slug: string;
   description: string;
   properties: Property[];
   allowed_parent_types?: number[];
@@ -19,6 +20,7 @@ export interface Element {
   parent_id?: number;
   type_name: string;
   name: string;
+  slug: string;
   created_at: string;
   updated_at: string;
 }
@@ -64,11 +66,13 @@ export interface TypePermission {
   can_edit: number;
   can_delete: number;
   type_name?: string;
+  type_slug?: string;
 }
 
 export interface Role {
   id: number;
   name: string;
+  slug: string;
   description: string;
   permissions: Permission[];
   type_permissions: TypePermission[];

@@ -19,7 +19,10 @@ export const authMiddleware = (req: any, res: any, next: any) => {
       `).all(user.role_id) as any[];
       
       const typePerms = db.prepare(`
-        SELECT * FROM role_type_permissions WHERE role_id = ?
+        SELECT rtp.*, et.slug as type_slug 
+        FROM role_type_permissions rtp 
+        JOIN element_types et ON rtp.type_id = et.id
+        WHERE rtp.role_id = ?
       `).all(user.role_id) as any[];
       
       user.permissions = perms.map(p => p.name);
@@ -45,7 +48,10 @@ export const requirePermission = (permission: string) => (req: any, res: any, ne
 export const checkTypePermission = (action: "can_view" | "can_create" | "can_edit" | "can_delete") => (req: any, res: any, next: any) => {
   const typeId = req.body.type_id || req.params.type_id;
   if (!typeId && req.params.id) {
-    const element = db.prepare("SELECT type_id FROM elements WHERE id = ?").get(req.params.id) as any;
+    const isId = /^\d+$/.test(req.params.id);
+    const element = isId 
+      ? db.prepare("SELECT type_id FROM elements WHERE id = ?").get(req.params.id) as any
+      : db.prepare("SELECT type_id FROM elements WHERE slug = ?").get(req.params.id) as any;
     if (element) req.params.type_id = element.type_id;
   }
   

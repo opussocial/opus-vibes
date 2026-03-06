@@ -1,6 +1,6 @@
 import React from "react";
-import { motion } from "motion/react";
-import { Lock } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Lock, X } from "lucide-react";
 import { Role, Permission } from "../types";
 import { Badge } from "./common/Badge";
 
@@ -8,18 +8,34 @@ interface RolesProps {
   roles: Role[];
   allPermissions: Permission[];
   hasPermission: (perm: string) => boolean;
-  updateRoleGlobalPermission: (roleId: number, permissionId: number, active: boolean) => void;
-  updateRoleTypePermission: (roleId: number, typeId: number, field: string, value: boolean) => void;
+  updateRoleGlobalPermission: (roleIdOrSlug: string | number, permissionId: number, active: boolean) => void;
+  updateRoleTypePermission: (roleIdOrSlug: string | number, typeIdOrSlug: string | number, field: string, value: boolean) => void;
+  isCreatingRole: boolean;
+  setIsCreatingRole: (val: boolean) => void;
+  newRole: { name: string; description: string };
+  setNewRole: (val: { name: string; description: string }) => void;
+  handleCreateRole: (e: React.FormEvent) => void;
 }
 
-export const Roles = ({ roles, allPermissions, hasPermission, updateRoleGlobalPermission, updateRoleTypePermission }: RolesProps) => {
+export const Roles = ({ 
+  roles, 
+  allPermissions, 
+  hasPermission, 
+  updateRoleGlobalPermission, 
+  updateRoleTypePermission,
+  isCreatingRole,
+  setIsCreatingRole,
+  newRole,
+  setNewRole,
+  handleCreateRole
+}: RolesProps) => {
   return (
     <motion.div
       key="roles"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="max-w-5xl mx-auto"
+      className="max-w-5xl mx-auto pb-20"
     >
       <div className="flex items-center justify-between mb-10">
         <div>
@@ -44,7 +60,7 @@ export const Roles = ({ roles, allPermissions, hasPermission, updateRoleGlobalPe
             <div className="p-8 border-b border-zinc-100 bg-zinc-50/50">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-2xl font-bold">{role.name}</h3>
-                <Badge color="purple">Role ID: {role.id}</Badge>
+                <Badge color="purple">Slug: {role.slug}</Badge>
               </div>
               <p className="text-zinc-500">{role.description}</p>
             </div>
@@ -62,7 +78,7 @@ export const Roles = ({ roles, allPermissions, hasPermission, updateRoleGlobalPe
                           type="checkbox" 
                           checked={isActive}
                           disabled={isSuperAdmin || !hasPermission("manage_roles")}
-                          onChange={(e) => updateRoleGlobalPermission(role.id, p.id, e.target.checked)}
+                          onChange={(e) => updateRoleGlobalPermission(role.slug, p.id, e.target.checked)}
                           className="w-4 h-4 rounded border-zinc-300 text-purple-600 focus:ring-purple-500"
                         />
                         <div>
@@ -89,7 +105,7 @@ export const Roles = ({ roles, allPermissions, hasPermission, updateRoleGlobalPe
                               type="checkbox"
                               checked={tp.can_view === 1}
                               disabled={isSuperAdmin || !hasPermission("manage_roles")}
-                              onChange={(e) => updateRoleTypePermission(role.id, tp.type_id, "can_view", e.target.checked)}
+                              onChange={(e) => updateRoleTypePermission(role.slug, tp.type_slug || tp.type_id, "can_view", e.target.checked)}
                               className="w-3 h-3 rounded border-zinc-300 text-green-600 focus:ring-green-500"
                             />
                             <span className="text-[10px] font-bold text-zinc-500 uppercase">View</span>
@@ -102,7 +118,7 @@ export const Roles = ({ roles, allPermissions, hasPermission, updateRoleGlobalPe
                                 type="checkbox"
                                 checked={(tp as any)[field] === 1}
                                 disabled={isSuperAdmin || !hasPermission("manage_roles") || !tp.can_view}
-                                onChange={(e) => updateRoleTypePermission(role.id, tp.type_id, field, e.target.checked)}
+                                onChange={(e) => updateRoleTypePermission(role.slug, tp.type_slug || tp.type_id, field, e.target.checked)}
                                 className={`w-3 h-3 rounded border-zinc-300 focus:ring-opacity-50 ${field === "can_delete" ? "text-red-600 focus:ring-red-500" : "text-green-600 focus:ring-green-500"}`}
                               />
                               <span className="text-[10px] font-bold text-zinc-400 uppercase">{field.split("_")[1]}</span>
@@ -118,6 +134,68 @@ export const Roles = ({ roles, allPermissions, hasPermission, updateRoleGlobalPe
           </div>
         ))}
       </div>
+
+      {/* Role Creator Modal */}
+      <AnimatePresence>
+        {isCreatingRole && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-zinc-100 flex items-center justify-between">
+                <h2 className="text-2xl font-bold tracking-tight">Create New Role</h2>
+                <button onClick={() => setIsCreatingRole(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateRole} className="flex-1 overflow-y-auto p-8 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 mb-2">Role Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newRole.name}
+                    onChange={e => setNewRole({ ...newRole, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                    placeholder="e.g. Content Manager"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 mb-2">Description</label>
+                  <textarea 
+                    rows={3}
+                    value={newRole.description}
+                    onChange={e => setNewRole({ ...newRole, description: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"
+                    placeholder="Describe the responsibilities of this role..."
+                  />
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    type="submit"
+                    className="flex-1 bg-black text-white py-4 rounded-2xl font-bold hover:bg-zinc-800 transition-all shadow-lg shadow-black/10"
+                  >
+                    Create Role
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setIsCreatingRole(false)}
+                    className="flex-1 bg-zinc-100 text-zinc-900 py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

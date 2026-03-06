@@ -8,7 +8,7 @@ interface SchemaTypesProps {
   types: ElementType[];
   hasPermission: (perm: string) => boolean;
   setIsCreatingType: (val: boolean) => void;
-  deleteType: (id: number) => void;
+  deleteType: (slug: string) => void;
   isCreatingType: boolean;
   newType: Partial<ElementType>;
   setNewType: (val: any) => void;
@@ -72,7 +72,7 @@ export const SchemaTypes = ({
                 <Badge color="zinc">{type.properties.length} Props</Badge>
                 {hasPermission("manage_types") && (
                   <button 
-                    onClick={() => deleteType(type.id)}
+                    onClick={() => deleteType(type.slug)}
                     className="p-1 hover:bg-red-50 text-zinc-300 hover:text-red-500 rounded transition-colors"
                   >
                     <Trash2 size={14} />

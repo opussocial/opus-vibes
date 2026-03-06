@@ -1,6 +1,7 @@
 import express from "express";
 import { db } from "../db";
 import { requireAuth, requirePermission } from "../middleware";
+import { slugify } from "../utils";
 
 const router = express.Router();
 
@@ -20,9 +21,10 @@ router.get("/types", requireAuth, (req, res) => {
 
 router.post("/types", requirePermission("manage_types"), (req, res) => {
   const { name, description, properties, allowed_parent_types } = req.body;
+  const slug = slugify(name);
   try {
     const transaction = db.transaction(() => {
-      const typeId = db.prepare("INSERT INTO element_types (name, description) VALUES (?, ?)").run(name, description).lastInsertRowid;
+      const typeId = db.prepare("INSERT INTO element_types (name, slug, description) VALUES (?, ?, ?)").run(name, slug, description).lastInsertRowid;
       const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
       for (const prop of properties) {
         insertProp.run(typeId, prop.table_name, prop.label);
@@ -48,9 +50,15 @@ router.post("/types", requirePermission("manage_types"), (req, res) => {
   }
 });
 
-router.delete("/types/:id", requirePermission("manage_types"), (req, res) => {
+router.delete("/types/:idOrSlug", requirePermission("manage_types"), (req, res) => {
   try {
-    db.prepare("DELETE FROM element_types WHERE id = ?").run(req.params.id);
+    const { idOrSlug } = req.params;
+    const isId = /^\d+$/.test(idOrSlug);
+    if (isId) {
+      db.prepare("DELETE FROM element_types WHERE id = ?").run(idOrSlug);
+    } else {
+      db.prepare("DELETE FROM element_types WHERE slug = ?").run(idOrSlug);
+    }
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

@@ -5,23 +5,23 @@ import { ElementDetail, User, MODULAR_TABLES } from "../types";
 import { Interactions } from "./Interactions";
 
 interface ElementViewProps {
-  elementId: number;
+  elementIdOrSlug: string | number;
   onClose: () => void;
   currentUser: User;
 }
 
-export const ElementView = ({ elementId, onClose, currentUser }: ElementViewProps) => {
+export const ElementView = ({ elementIdOrSlug, onClose, currentUser }: ElementViewProps) => {
   const [element, setElement] = useState<ElementDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/elements/${elementId}`)
+    fetch(`/api/elements/${elementIdOrSlug}`)
       .then(res => res.json())
       .then(data => {
         setElement(data);
         setLoading(false);
       });
-  }, [elementId]);
+  }, [elementIdOrSlug]);
 
   if (loading) return null;
   if (!element) return null;
@@ -139,7 +139,7 @@ export const ElementView = ({ elementId, onClose, currentUser }: ElementViewProp
             </div>
 
             <div className="lg:col-span-1 border-l border-zinc-100 pl-8">
-              <Interactions elementId={elementId} currentUser={currentUser} />
+              <Interactions elementId={element.id} currentUser={currentUser} />
             </div>
           </div>
         </div>

@@ -40,7 +40,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingElement, setEditingElement] = useState<ElementDetail | null>(null);
-  const [viewingElementId, setViewingElementId] = useState<number | null>(null);
+  const [viewingElementSlug, setViewingElementSlug] = useState<string | number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedType, setSelectedType] = useState<ElementType | null>(null);
   const [isCreatingType, setIsCreatingType] = useState(false);
@@ -55,6 +55,8 @@ export default function App() {
   const [isCreatingEdge, setIsCreatingEdge] = useState(false);
   const [newEdge, setNewEdge] = useState({ rel_type_id: 0, source_el_id: 0, target_el_id: 0 });
   const [isFabOpen, setIsFabOpen] = useState(false);
+  const [isCreatingRole, setIsCreatingRole] = useState(false);
+  const [newRole, setNewRole] = useState({ name: "Untitled Role", description: "" });
 
   useEffect(() => {
     const init = async () => {
@@ -125,15 +127,15 @@ export default function App() {
     if (res.ok) fetchData();
   };
 
-  const updateRoleGlobalPermission = async (roleId: number, permissionId: number, active: boolean) => {
-    const role = roles.find(r => r.id === roleId);
+  const updateRoleGlobalPermission = async (roleIdOrSlug: string | number, permissionId: number, active: boolean) => {
+    const role = roles.find(r => r.id === roleIdOrSlug || r.slug === roleIdOrSlug);
     if (!role) return;
     
     const newPermIds = active 
       ? [...role.permissions.map(p => p.id), permissionId]
       : role.permissions.map(p => p.id).filter(id => id !== permissionId);
       
-    const res = await fetch(`/api/roles/${roleId}/permissions`, {
+    const res = await fetch(`/api/roles/${role.slug}/permissions`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ permission_ids: newPermIds })
@@ -141,12 +143,15 @@ export default function App() {
     if (res.ok) fetchData();
   };
 
-  const updateRoleTypePermission = async (roleId: number, typeId: number, field: string, value: boolean) => {
-    const role = roles.find(r => r.id === roleId);
-    const typePerm = role?.type_permissions.find(tp => tp.type_id === typeId);
+  const updateRoleTypePermission = async (roleIdOrSlug: string | number, typeIdOrSlug: string | number, field: string, value: boolean) => {
+    const role = roles.find(r => r.id === roleIdOrSlug || r.slug === roleIdOrSlug);
+    const type = types.find(t => t.id === typeIdOrSlug || t.slug === typeIdOrSlug);
+    if (!role || !type) return;
+
+    const typePerm = role.type_permissions.find(tp => tp.type_id === type.id);
     if (!typePerm) return;
 
-    const res = await fetch(`/api/roles/${roleId}/type-permissions/${typeId}`, {
+    const res = await fetch(`/api/roles/${role.slug}/type-permissions/${type.slug}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...typePerm, [field]: value })
@@ -154,9 +159,23 @@ export default function App() {
     if (res.ok) fetchData();
   };
 
-  const deleteType = async (id: number) => {
+  const handleCreateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch("/api/roles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newRole)
+    });
+    if (res.ok) {
+      setIsCreatingRole(false);
+      setNewRole({ name: "Untitled Role", description: "" });
+      fetchData();
+    }
+  };
+
+  const deleteType = async (idOrSlug: string | number) => {
     if (!confirm("Are you sure? This will delete all elements of this type.")) return;
-    const res = await fetch(`/api/types/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/types/${idOrSlug}`, { method: "DELETE" });
     if (res.ok) fetchData();
   };
 
@@ -233,8 +252,8 @@ export default function App() {
     }
   };
 
-  const handleEdit = async (id: number) => {
-    const res = await fetch(`/api/elements/${id}`, {
+  const handleEdit = async (idOrSlug: string | number) => {
+    const res = await fetch(`/api/elements/${idOrSlug}`, {
       headers: { "x-user-id": currentUser?.id.toString() || "" }
     });
     const data = await res.json();
@@ -242,9 +261,9 @@ export default function App() {
     setIsCreating(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (idOrSlug: string | number) => {
     if (!confirm("Are you sure you want to delete this element?")) return;
-    await fetch(`/api/elements/${id}`, { 
+    await fetch(`/api/elements/${idOrSlug}`, { 
       method: "DELETE",
       headers: { "x-user-id": currentUser?.id.toString() || "" }
     });
@@ -256,7 +275,7 @@ export default function App() {
     if (!editingElement) return;
 
     const method = editingElement.id ? "PUT" : "POST";
-    const url = editingElement.id ? `/api/elements/${editingElement.id}` : "/api/elements";
+    const url = editingElement.id ? `/api/elements/${editingElement.slug}` : "/api/elements";
     
     const payload = {
       name: editingElement.name,
@@ -417,7 +436,7 @@ export default function App() {
               getTypePermission={getTypePermission}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
-              handleView={(id) => setViewingElementId(id)}
+              handleView={(slug) => setViewingElementSlug(slug)}
               startNewElement={startNewElement}
             />
           ) : view === "types" ? (
@@ -440,6 +459,11 @@ export default function App() {
               hasPermission={hasPermission}
               updateRoleGlobalPermission={updateRoleGlobalPermission}
               updateRoleTypePermission={updateRoleTypePermission}
+              isCreatingRole={isCreatingRole}
+              setIsCreatingRole={setIsCreatingRole}
+              newRole={newRole}
+              setNewRole={setNewRole}
+              handleCreateRole={handleCreateRole}
             />
           ) : view === "relationships" ? (
             <Relationships 
@@ -477,58 +501,62 @@ export default function App() {
       </main>
 
       {/* FAB Button */}
-      <div className="fixed bottom-8 right-8 z-40">
-        <AnimatePresence>
-          {view === "dashboard" && isFabOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.9 }}
-              className="absolute bottom-16 right-0 bg-white border border-zinc-200 rounded-2xl shadow-2xl py-3 w-56 overflow-hidden"
-            >
-              <div className="px-4 py-2 border-b border-zinc-100 mb-2">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Add Root Element</p>
-              </div>
-              {types.filter(t => !t.allowed_parent_types || t.allowed_parent_types.length === 0).map(t => {
-                const perm = getTypePermission(t.id);
-                if (!perm.can_create) return null;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      startNewElement(t);
-                      setIsFabOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-zinc-200" />
-                    {t.name}
-                  </button>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {["dashboard", "types", "relationships", "roles"].includes(view) && (
+        <div className="fixed bottom-8 right-8 z-40">
+          <AnimatePresence>
+            {view === "dashboard" && isFabOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                className="absolute bottom-16 right-0 bg-white border border-zinc-200 rounded-2xl shadow-2xl py-3 w-56 overflow-hidden"
+              >
+                <div className="px-4 py-2 border-b border-zinc-100 mb-2">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Add Root Element</p>
+                </div>
+                {types.filter(t => !t.allowed_parent_types || t.allowed_parent_types.length === 0).map(t => {
+                  const perm = getTypePermission(t.id);
+                  if (!perm.can_create) return null;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        startNewElement(t);
+                        setIsFabOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-zinc-200" />
+                      {t.name}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <button
-          onClick={() => {
-            if (view === "dashboard") {
-              setIsFabOpen(!isFabOpen);
-            } else if (view === "types") {
-              setIsCreatingType(true);
-            } else if (view === "relationships") {
-              setIsCreatingRelType(true);
-            }
-          }}
-          className="w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group"
-        >
-          <Plus size={24} className={`transition-transform duration-300 ${isFabOpen ? 'rotate-45' : ''}`} />
-          
-          <div className="absolute right-full mr-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest">
-            {view === "dashboard" ? "Add Element" : view === "types" ? "Add Schema Type" : view === "relationships" ? "Add Relationship" : "Quick Add"}
-          </div>
-        </button>
-      </div>
+          <button
+            onClick={() => {
+              if (view === "dashboard") {
+                setIsFabOpen(!isFabOpen);
+              } else if (view === "types") {
+                setIsCreatingType(true);
+              } else if (view === "relationships") {
+                setIsCreatingRelType(true);
+              } else if (view === "roles") {
+                setIsCreatingRole(true);
+              }
+            }}
+            className="w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group"
+          >
+            <Plus size={24} className={`transition-transform duration-300 ${isFabOpen ? 'rotate-45' : ''}`} />
+            
+            <div className="absolute right-full mr-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest">
+              {view === "dashboard" ? "Add Element" : view === "types" ? "Add Schema Type" : view === "relationships" ? "Add Relationship" : view === "roles" ? "Add Role" : "Quick Add"}
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Editor Modal */}
       <AnimatePresence>
@@ -547,11 +575,11 @@ export default function App() {
 
       {/* View Modal */}
       <AnimatePresence>
-        {viewingElementId && currentUser && (
+        {viewingElementSlug && currentUser && (
           <ElementView 
-            elementId={viewingElementId}
+            elementIdOrSlug={viewingElementSlug}
             currentUser={currentUser}
-            onClose={() => setViewingElementId(null)}
+            onClose={() => setViewingElementSlug(null)}
           />
         )}
       </AnimatePresence>

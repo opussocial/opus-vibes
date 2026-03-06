@@ -8,9 +8,9 @@ interface DashboardProps {
   elements: Element[];
   types: ElementType[];
   getTypePermission: (typeId: number) => TypePermission;
-  handleEdit: (id: number) => void;
-  handleDelete: (id: number) => void;
-  handleView: (id: number) => void;
+  handleEdit: (slug: string) => void;
+  handleDelete: (slug: string) => void;
+  handleView: (slug: string) => void;
   startNewElement: (type: ElementType, parentId?: number) => void;
 }
 
@@ -19,9 +19,9 @@ interface ElementRowProps {
   allElements: Element[];
   types: ElementType[];
   getTypePermission: (typeId: number) => TypePermission;
-  handleEdit: (id: number) => void;
-  handleDelete: (id: number) => void;
-  handleView: (id: number) => void;
+  handleEdit: (slug: string) => void;
+  handleDelete: (slug: string) => void;
+  handleView: (slug: string) => void;
   startNewElement: (type: ElementType, parentId?: number) => void;
   depth?: number;
 }
@@ -80,7 +80,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
               </Badge>
             </div>
             <p className="text-[10px] text-zinc-400 mt-0.5">
-              ID: {el.id}
+              Slug: {el.slug}
             </p>
           </div>
         </div>
@@ -109,7 +109,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
 
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
-              onClick={() => handleView(el.id)}
+              onClick={() => handleView(el.slug)}
               className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
               title="View Details"
             >
@@ -117,7 +117,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
             </button>
             {perm.can_edit && (
               <button 
-                onClick={() => handleEdit(el.id)}
+                onClick={() => handleEdit(el.slug)}
                 className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
                 title="Edit"
               >
@@ -126,7 +126,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
             )}
             {perm.can_delete && (
               <button 
-                onClick={() => handleDelete(el.id)}
+                onClick={() => handleDelete(el.slug)}
                 className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
                 title="Delete"
               >

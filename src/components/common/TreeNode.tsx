@@ -28,6 +28,7 @@ export function TreeNode({ element, allElements, level }: TreeNodeProps) {
         <div className="w-2 h-2 rounded-full bg-zinc-200 group-hover:bg-black transition-colors" />
         <span className="text-sm font-bold text-zinc-700">{element.name}</span>
         <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest ml-2">{element.type_name}</span>
+        <span className="text-[9px] text-zinc-300 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">/{element.slug}</span>
       </div>
       {isOpen && children.length > 0 && (
         <div className="mt-1">
