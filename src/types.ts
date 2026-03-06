@@ -3,6 +3,7 @@ export interface ElementType {
   name: string;
   description: string;
   properties: Property[];
+  allowed_parent_types?: number[];
 }
 
 export interface Property {

@@ -8,13 +8,18 @@ router.get("/types", requireAuth, (req, res) => {
   const types = db.prepare("SELECT * FROM element_types").all();
   const typesWithProps = types.map((type: any) => {
     const props = db.prepare("SELECT * FROM properties WHERE type_id = ?").all(type.id);
-    return { ...type, properties: props };
+    const allowedParents = db.prepare("SELECT parent_type_id FROM type_hierarchy WHERE child_type_id = ?").all(type.id);
+    return { 
+      ...type, 
+      properties: props, 
+      allowed_parent_types: allowedParents.map((p: any) => p.parent_type_id) 
+    };
   });
   res.json(typesWithProps);
 });
 
 router.post("/types", requirePermission("manage_types"), (req, res) => {
-  const { name, description, properties } = req.body;
+  const { name, description, properties, allowed_parent_types } = req.body;
   try {
     const transaction = db.transaction(() => {
       const typeId = db.prepare("INSERT INTO element_types (name, description) VALUES (?, ?)").run(name, description).lastInsertRowid;
@@ -22,6 +27,14 @@ router.post("/types", requirePermission("manage_types"), (req, res) => {
       for (const prop of properties) {
         insertProp.run(typeId, prop.table_name, prop.label);
       }
+
+      if (allowed_parent_types && Array.isArray(allowed_parent_types)) {
+        const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
+        for (const parentId of allowed_parent_types) {
+          insertHierarchy.run(parentId, typeId);
+        }
+      }
+
       const adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
       if (adminRole) {
         db.prepare("INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete) VALUES (?, ?, 1, 1, 1, 1)").run(adminRole.id, typeId);
@@ -29,7 +42,7 @@ router.post("/types", requirePermission("manage_types"), (req, res) => {
       return typeId;
     });
     const id = transaction();
-    res.json({ id, name, description, properties });
+    res.json({ id, name, description, properties, allowed_parent_types });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

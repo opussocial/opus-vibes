@@ -9,6 +9,7 @@ import {
   X,
   Shield,
   Users,
+  User as UserIcon,
   LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,9 +26,10 @@ import { Users as UsersScreen } from "./components/Users";
 import { Relationships } from "./components/Relationships";
 import { ElementEditor } from "./components/ElementEditor";
 import { ElementView } from "./components/ElementView";
+import { Profile } from "./components/Profile";
 
 export default function App() {
-  const [view, setView] = useState<"dashboard" | "types" | "roles" | "users" | "relationships">("dashboard");
+  const [view, setView] = useState<"dashboard" | "types" | "roles" | "users" | "relationships" | "profile">("dashboard");
   const [elements, setElements] = useState<Element[]>([]);
   const [types, setTypes] = useState<ElementType[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -42,11 +44,17 @@ export default function App() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedType, setSelectedType] = useState<ElementType | null>(null);
   const [isCreatingType, setIsCreatingType] = useState(false);
-  const [newType, setNewType] = useState({ name: "", description: "", properties: [] as any[] });
+  const [newType, setNewType] = useState({ 
+    name: "Untitled Type", 
+    description: "", 
+    properties: [] as any[],
+    allowed_parent_types: [] as number[]
+  });
   const [isCreatingRelType, setIsCreatingRelType] = useState(false);
-  const [newRelType, setNewRelType] = useState({ source_type_id: 0, target_type_id: 0, name: "" });
+  const [newRelType, setNewRelType] = useState({ source_type_id: 0, target_type_id: 0, name: "Untitled Relationship" });
   const [isCreatingEdge, setIsCreatingEdge] = useState(false);
   const [newEdge, setNewEdge] = useState({ rel_type_id: 0, source_el_id: 0, target_el_id: 0 });
+  const [isFabOpen, setIsFabOpen] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -54,12 +62,16 @@ export default function App() {
       const user = await res.json();
       if (user) {
         setCurrentUser(user);
-        fetchData(user.id);
+        fetchData(user);
       }
       setLoading(false);
     };
     init();
   }, []);
+
+  useEffect(() => {
+    setIsFabOpen(false);
+  }, [view]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -70,9 +82,9 @@ export default function App() {
     setUsers([]);
   };
 
-  const fetchData = async (userId?: number) => {
-    const uid = userId || currentUser?.id;
-    if (!uid) return;
+  const fetchData = async (userObj?: User) => {
+    const user = userObj || currentUser;
+    if (!user) return;
 
     setLoading(true);
     try {
@@ -87,7 +99,7 @@ export default function App() {
       setRelTypes(await rtRes.json());
       setGraph(await gRes.json());
 
-      if (currentUser?.permissions.includes("manage_roles")) {
+      if (user.permissions.includes("manage_roles")) {
         const [rRes, uRes, pRes] = await Promise.all([
           fetch("/api/roles"),
           fetch("/api/users"),
@@ -203,7 +215,12 @@ export default function App() {
       body: JSON.stringify(newType)
     });
     setIsCreatingType(false);
-    setNewType({ name: "", description: "", properties: [] });
+    setNewType({ 
+      name: "Untitled Type", 
+      description: "", 
+      properties: [],
+      allowed_parent_types: []
+    });
     fetchData();
   };
 
@@ -269,14 +286,22 @@ export default function App() {
     fetchData();
   };
 
-  const startNewElement = (type: ElementType) => {
+  const startNewElement = (type: ElementType, parentId?: number) => {
     setSelectedType(type);
     const initialData: any = {
-      name: "",
+      name: `Untitled ${type.name}`,
       type_id: type.id,
       type_name: type.name,
+      parent_id: parentId,
     };
-    type.properties.forEach(p => initialData[p.table_name] = {});
+    type.properties.forEach(p => {
+      let defaults = {};
+      if (p.table_name === "file") defaults = { filename: "Untitled File" };
+      if (p.table_name === "urls_embeds") defaults = { title: "Untitled Link" };
+      if (p.table_name === "product_info") defaults = { currency: "USD", sku: "SKU-000" };
+      if (p.table_name === "place") defaults = { address: "Untitled Location" };
+      initialData[p.table_name] = defaults;
+    });
     setEditingElement(initialData);
     setIsCreating(true);
   };
@@ -295,7 +320,7 @@ export default function App() {
   if (!currentUser) {
     return <AuthScreen onLogin={(user) => {
       setCurrentUser(user);
-      fetchData(user.id);
+      fetchData(user);
     }} />;
   }
 
@@ -335,6 +360,12 @@ export default function App() {
             active={view === "relationships"} 
             onClick={() => setView("relationships")} 
           />
+          <SidebarItem 
+            icon={UserIcon} 
+            label="My Profile" 
+            active={view === "profile"} 
+            onClick={() => setView("profile")} 
+          />
           {hasPermission("manage_roles") && (
             <SidebarItem 
               icon={Users} 
@@ -348,15 +379,18 @@ export default function App() {
         <div className="mt-auto space-y-6">
           <div className="p-4 bg-zinc-900 rounded-2xl text-white">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setView("profile")}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
+              >
                 <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center">
-                  <Users size={16} />
+                  <UserIcon size={16} />
                 </div>
                 <div>
                   <p className="text-xs font-bold opacity-50 uppercase">User</p>
                   <p className="text-sm font-bold truncate w-24">{currentUser?.username}</p>
                 </div>
-              </div>
+              </button>
               <button 
                 onClick={handleLogout}
                 className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
@@ -370,25 +404,6 @@ export default function App() {
             </div>
           </div>
 
-          <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-2">Quick Action</p>
-            <div className="flex flex-col gap-2">
-              {types.map(t => {
-                const perm = getTypePermission(t.id);
-                if (!perm.can_create) return null;
-                return (
-                  <button 
-                    key={t.id}
-                    onClick={() => startNewElement(t)}
-                    className="text-left text-sm font-medium text-zinc-600 hover:text-black flex items-center justify-between group"
-                  >
-                    New {t.name}
-                    <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </aside>
 
@@ -398,10 +413,12 @@ export default function App() {
           {view === "dashboard" ? (
             <Dashboard 
               elements={elements}
+              types={types}
               getTypePermission={getTypePermission}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
               handleView={(id) => setViewingElementId(id)}
+              startNewElement={startNewElement}
             />
           ) : view === "types" ? (
             <SchemaTypes 
@@ -448,13 +465,70 @@ export default function App() {
             <UsersScreen 
               users={users}
               roles={roles}
+              currentUser={currentUser}
               updateUserRole={updateUserRole}
             />
+          ) : view === "profile" && currentUser ? (
+            <Profile user={currentUser} />
           ) : (
             <div />
           )}
         </AnimatePresence>
       </main>
+
+      {/* FAB Button */}
+      <div className="fixed bottom-8 right-8 z-40">
+        <AnimatePresence>
+          {view === "dashboard" && isFabOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              className="absolute bottom-16 right-0 bg-white border border-zinc-200 rounded-2xl shadow-2xl py-3 w-56 overflow-hidden"
+            >
+              <div className="px-4 py-2 border-b border-zinc-100 mb-2">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Add Root Element</p>
+              </div>
+              {types.filter(t => !t.allowed_parent_types || t.allowed_parent_types.length === 0).map(t => {
+                const perm = getTypePermission(t.id);
+                if (!perm.can_create) return null;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      startNewElement(t);
+                      setIsFabOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-zinc-200" />
+                    {t.name}
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button
+          onClick={() => {
+            if (view === "dashboard") {
+              setIsFabOpen(!isFabOpen);
+            } else if (view === "types") {
+              setIsCreatingType(true);
+            } else if (view === "relationships") {
+              setIsCreatingRelType(true);
+            }
+          }}
+          className="w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group"
+        >
+          <Plus size={24} className={`transition-transform duration-300 ${isFabOpen ? 'rotate-45' : ''}`} />
+          
+          <div className="absolute right-full mr-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest">
+            {view === "dashboard" ? "Add Element" : view === "types" ? "Add Schema Type" : view === "relationships" ? "Add Relationship" : "Quick Add"}
+          </div>
+        </button>
+      </div>
 
       {/* Editor Modal */}
       <AnimatePresence>

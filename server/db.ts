@@ -150,6 +150,14 @@ export function initDb() {
       description TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS type_hierarchy (
+      parent_type_id INTEGER NOT NULL,
+      child_type_id INTEGER NOT NULL,
+      PRIMARY KEY (parent_type_id, child_type_id),
+      FOREIGN KEY (parent_type_id) REFERENCES element_types(id) ON DELETE CASCADE,
+      FOREIGN KEY (child_type_id) REFERENCES element_types(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS interactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       element_id INTEGER NOT NULL,
@@ -188,6 +196,16 @@ export function initDb() {
     insertProp.run(eventType, "place", "Location");
     insertProp.run(eventType, "time_tracking", "Schedule");
 
+    const categoryType = insertType.run("Category", "A grouping for other elements").lastInsertRowid;
+    insertProp.run(categoryType, "content", "Category Description");
+
+    // Hierarchy: Articles can be under Categories or other Articles
+    const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
+    insertHierarchy.run(categoryType, articleType);
+    insertHierarchy.run(articleType, articleType);
+    insertHierarchy.run(categoryType, productType);
+    insertHierarchy.run(categoryType, categoryType); // Nested categories
+
     const adminRole = db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Super Admin", "Full system access").lastInsertRowid;
     const editorRole = db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Editor", "Can manage content but not schema").lastInsertRowid;
     const viewerRole = db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Viewer", "Read-only access").lastInsertRowid;
@@ -214,5 +232,50 @@ export function initDb() {
     insertInteractionType.run("like", "Heart", "Users can like elements");
     insertInteractionType.run("favorite", "Star", "Users can favorite elements");
     insertInteractionType.run("comment", "MessageSquare", "Users can leave comments");
+
+    // Seed Sample Elements
+    const articleId = db.prepare("INSERT INTO elements (name, type_id) VALUES (?, ?)").run("Welcome to FlexCatalog", articleType).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(articleId, "This is your first modular element. You can edit it to see how the modular data system works.");
+    db.prepare("INSERT INTO urls_embeds (element_id, url, title) VALUES (?, ?, ?)").run(articleId, "https://github.com", "Project Source");
+
+    const productId = db.prepare("INSERT INTO elements (name, type_id) VALUES (?, ?)").run("Premium Subscription", productType).lastInsertRowid;
+    db.prepare("INSERT INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(productId, "SUB-001", 99.99, "USD", 1000);
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(productId, "Get full access to all features with our premium plan.");
+
+    const eventId = db.prepare("INSERT INTO elements (name, type_id) VALUES (?, ?)").run("Launch Party", eventType).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(eventId, "Join us for the official launch of FlexCatalog CMS!");
+    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(eventId, 37.7749, -122.4194, "San Francisco, CA");
+    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time, duration) VALUES (?, ?, ?, ?)").run(eventId, "2024-12-01 18:00:00", "2024-12-01 22:00:00", 240);
+  }
+
+  // Ensure at least one admin exists
+  const adminCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Super Admin'").get() as { count: number };
+  if (adminCount.count === 0) {
+    let adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
+    if (!adminRole) {
+      adminRole = { id: db.prepare("INSERT INTO roles (name, description) VALUES (?, ?)").run("Super Admin", "Full system access").lastInsertRowid };
+    }
+    const hashedPassword = bcrypt.hashSync("password123", 10);
+    db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole.id);
+  }
+
+  // Ensure Editor exists
+  const editorCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Editor'").get() as { count: number };
+  if (editorCount.count === 0) {
+    let editorRole = db.prepare("SELECT id FROM roles WHERE name = 'Editor'").get() as any;
+    if (editorRole) {
+      const hashedPassword = bcrypt.hashSync("password123", 10);
+      db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("editor", "editor@example.com", hashedPassword, editorRole.id);
+    }
+  }
+
+  // Ensure Viewer exists
+  const viewerCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Viewer'").get() as { count: number };
+  if (viewerCount.count === 0) {
+    let viewerRole = db.prepare("SELECT id FROM roles WHERE name = 'Viewer'").get() as any;
+    if (viewerRole) {
+      const hashedPassword = bcrypt.hashSync("password123", 10);
+      db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("viewer", "viewer@example.com", hashedPassword, viewerRole.id);
+    }
   }
 }

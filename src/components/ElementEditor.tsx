@@ -79,10 +79,26 @@ export const ElementEditor = ({
                   className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all text-lg font-medium disabled:opacity-50"
                 >
                   <option value="">No Parent (Root)</option>
-                  {elements.filter(e => e.id !== editingElement.id).map(e => (
+                  {elements.filter(e => {
+                    const currentType = types.find(t => t.id === editingElement.type_id);
+                    const allowedParentTypes = currentType?.allowed_parent_types || [];
+                    
+                    const isNotSelf = e.id !== editingElement.id;
+                    // If allowedParentTypes is empty, we allow any parent (default behavior)
+                    // unless the user specifically wants strict mode. 
+                    // Given the request, strict mode is likely desired for configured types.
+                    const isAllowedType = allowedParentTypes.length === 0 || allowedParentTypes.includes(e.type_id);
+                    
+                    return isNotSelf && isAllowedType;
+                  }).map(e => (
                     <option key={e.id} value={e.id}>{e.name} ({e.type_name})</option>
                   ))}
                 </select>
+                {types.find(t => t.id === editingElement.type_id)?.allowed_parent_types?.length ? (
+                  <p className="text-[10px] text-zinc-400 mt-1 italic">
+                    Only certain types can be parents of this {editingElement.type_name}.
+                  </p>
+                ) : null}
               </div>
             </div>
           </section>

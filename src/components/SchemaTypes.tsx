@@ -96,6 +96,24 @@ export const SchemaTypes = ({
                   <span className="ml-auto text-[10px] text-zinc-400 font-mono uppercase">{p.table_name}</span>
                 </div>
               ))}
+              {type.allowed_parent_types && type.allowed_parent_types.length > 0 && (
+                <div className="pt-4 mt-4 border-t border-zinc-50">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <Database size={10} />
+                    Allowed Parents
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {type.allowed_parent_types.map(parentId => {
+                      const parentType = types.find(t => t.id === parentId);
+                      return parentType ? (
+                        <span key={parentId}>
+                          <Badge color="zinc">{parentType.name}</Badge>
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -167,6 +185,45 @@ export const SchemaTypes = ({
                           {table.value === "file" && <Database size={16} />}
                         </div>
                         <span className="text-sm font-bold">{table.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-zinc-100">
+                  <label className="block text-sm font-bold text-zinc-900 mb-4 flex items-center gap-2">
+                    <Database size={18} className="text-zinc-400" />
+                    Allowed Parent Types
+                  </label>
+                  <p className="text-xs text-zinc-500 mb-4">
+                    Define which types of elements can be parents of this type. 
+                    This restricts the "Parent Element" selection in the editor.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {types.map(t => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          const exists = newType.allowed_parent_types?.includes(t.id);
+                          if (exists) {
+                            setNewType({ ...newType, allowed_parent_types: newType.allowed_parent_types?.filter(id => id !== t.id) });
+                          } else {
+                            setNewType({ ...newType, allowed_parent_types: [...(newType.allowed_parent_types || []), t.id] });
+                          }
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                          newType.allowed_parent_types?.includes(t.id)
+                            ? "bg-zinc-900 border-zinc-900 text-white shadow-md"
+                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg ${
+                          newType.allowed_parent_types?.includes(t.id) ? "bg-white/20" : "bg-zinc-100"
+                        }`}>
+                          <Database size={16} />
+                        </div>
+                        <span className="text-sm font-bold">{t.name}</span>
                       </button>
                     ))}
                   </div>

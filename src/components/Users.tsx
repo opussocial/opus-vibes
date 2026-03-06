@@ -6,10 +6,11 @@ import { Badge } from "./common/Badge";
 interface UsersProps {
   users: User[];
   roles: Role[];
+  currentUser: User | null;
   updateUserRole: (userId: number, roleId: number) => void;
 }
 
-export const Users = ({ users, roles, updateUserRole }: UsersProps) => {
+export const Users = ({ users, roles, currentUser, updateUserRole }: UsersProps) => {
   return (
     <motion.div
       key="users"
@@ -36,14 +37,27 @@ export const Users = ({ users, roles, updateUserRole }: UsersProps) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {users.map(user => (
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-zinc-400 italic">
+                  No users found in the system.
+                </td>
+              </tr>
+            ) : users.map(user => (
               <tr key={user.id} className="hover:bg-zinc-50/50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 font-bold text-xs">
                       {user.username[0].toUpperCase()}
                     </div>
-                    <span className="font-bold">{user.username}</span>
+                    <div className="flex flex-col">
+                      <span className="font-bold flex items-center gap-2">
+                        {user.username}
+                        {user.id === currentUser?.id && (
+                          <span className="px-1.5 py-0.5 bg-black text-white text-[8px] rounded uppercase tracking-tighter">You</span>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-zinc-500">{user.email}</td>
