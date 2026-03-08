@@ -10,10 +10,12 @@ router.get("/types", requireAuth, (req, res) => {
   const typesWithProps = types.map((type: any) => {
     const props = db.prepare("SELECT * FROM properties WHERE type_id = ?").all(type.id);
     const allowedParents = db.prepare("SELECT parent_type_id FROM type_hierarchy WHERE child_type_id = ?").all(type.id);
+    const elementCount = db.prepare("SELECT COUNT(*) as count FROM elements WHERE type_id = ?").get(type.id) as { count: number };
     return { 
       ...type, 
       properties: props, 
-      allowed_parent_types: allowedParents.map((p: any) => p.parent_type_id) 
+      allowed_parent_types: allowedParents.map((p: any) => p.parent_type_id),
+      element_count: elementCount.count
     };
   });
   res.json(typesWithProps);
@@ -45,6 +47,46 @@ router.post("/types", requirePermission("manage_types"), (req, res) => {
     });
     const id = transaction();
     res.json({ id, name, description, properties, allowed_parent_types });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put("/types/:idOrSlug", requirePermission("manage_types"), (req, res) => {
+  const { idOrSlug } = req.params;
+  const { name, description, properties, allowed_parent_types } = req.body;
+  const isId = /^\d+$/.test(idOrSlug);
+
+  try {
+    const type = db.prepare(`SELECT * FROM element_types WHERE ${isId ? "id" : "slug"} = ?`).get(idOrSlug) as any;
+    if (!type) return res.status(404).json({ error: "Type not found" });
+
+    const elementCount = db.prepare("SELECT COUNT(*) as count FROM elements WHERE type_id = ?").get(type.id) as { count: number };
+    if (elementCount.count > 0) {
+      return res.status(400).json({ error: "Cannot edit schema type because elements of this type already exist." });
+    }
+
+    const transaction = db.transaction(() => {
+      db.prepare("UPDATE element_types SET name = ?, slug = ?, description = ? WHERE id = ?").run(name, slugify(name), description, type.id);
+      
+      // Update properties
+      db.prepare("DELETE FROM properties WHERE type_id = ?").run(type.id);
+      const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
+      for (const prop of properties) {
+        insertProp.run(type.id, prop.table_name, prop.label);
+      }
+
+      // Update hierarchy
+      db.prepare("DELETE FROM type_hierarchy WHERE child_type_id = ?").run(type.id);
+      if (allowed_parent_types && Array.isArray(allowed_parent_types)) {
+        const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
+        for (const parentId of allowed_parent_types) {
+          insertHierarchy.run(parentId, type.id);
+        }
+      }
+    });
+    transaction();
+    res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

@@ -144,7 +144,9 @@ export function initDb() {
       password TEXT,
       google_id TEXT UNIQUE,
       role_id INTEGER NOT NULL,
-      FOREIGN KEY (role_id) REFERENCES roles(id)
+      profile_element_id INTEGER,
+      FOREIGN KEY (role_id) REFERENCES roles(id),
+      FOREIGN KEY (profile_element_id) REFERENCES elements(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS interaction_types (
@@ -178,6 +180,7 @@ export function initDb() {
   // Migrations
   try { db.exec("ALTER TABLE elements ADD COLUMN parent_id INTEGER REFERENCES elements(id) ON DELETE SET NULL"); } catch (e) {}
   try { db.exec("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE"); } catch (e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN profile_element_id INTEGER REFERENCES elements(id) ON DELETE SET NULL"); } catch (e) {}
   try { db.exec("ALTER TABLE users ALTER COLUMN password DROP NOT NULL"); } catch (e) {}
   
   // Slug Migrations
@@ -221,6 +224,11 @@ export function initDb() {
 
     const categoryType = insertType.run("Category", "category", "A grouping for other elements").lastInsertRowid;
     insertProp.run(categoryType, "content", "Category Description");
+
+    const profileType = insertType.run("Profile", "profile", "User personal information and settings").lastInsertRowid;
+    insertProp.run(profileType, "content", "Bio");
+    insertProp.run(profileType, "place", "Location");
+    insertProp.run(profileType, "file", "Avatar");
 
     // Hierarchy: Articles can be under Categories or other Articles
     const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");

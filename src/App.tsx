@@ -240,6 +240,35 @@ export default function App() {
     navigate("/types");
   };
 
+  const handleUpdateType = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hasPermission("manage_types")) return alert("Permission denied");
+    if (!newType.id) return;
+
+    const res = await fetch(`/api/types/${newType.id}`, {
+      method: "PUT",
+      headers: { 
+        "Content-Type": "application/json",
+        "x-user-id": currentUser?.id.toString() || ""
+      },
+      body: JSON.stringify(newType)
+    });
+    
+    if (res.ok) {
+      setNewType({ 
+        name: "Untitled Type", 
+        description: "", 
+        properties: [],
+        allowed_parent_types: []
+      });
+      await fetchData();
+      navigate("/types");
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to update type");
+    }
+  };
+
   const toggleProp = (table: string, label: string) => {
     const exists = newType.properties.find(p => p.table_name === table);
     if (exists) {
@@ -445,7 +474,11 @@ export default function App() {
               />
             } />
             <Route path="/elements/:slug" element={
-              <ElementView currentUser={currentUser} />
+              <ElementView 
+                currentUser={currentUser} 
+                types={types}
+                relTypes={relTypes}
+              />
             } />
             <Route path="/elements/:slug/edit" element={
               <ElementEditor 
@@ -464,6 +497,7 @@ export default function App() {
                 newType={newType}
                 setNewType={setNewType}
                 handleCreateType={handleCreateType}
+                handleUpdateType={handleUpdateType}
                 toggleProp={toggleProp}
                 MODULAR_TABLES={MODULAR_TABLES}
               />

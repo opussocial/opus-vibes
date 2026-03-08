@@ -5,6 +5,7 @@ export interface ElementType {
   description: string;
   properties: Property[];
   allowed_parent_types?: number[];
+  element_count?: number;
 }
 
 export interface Property {
@@ -54,6 +55,7 @@ export interface User {
   email: string;
   role_id: number;
   role_name: string;
+  profile_element_id?: number;
   permissions: string[];
   type_permissions: TypePermission[];
 }

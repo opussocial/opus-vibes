@@ -42,6 +42,51 @@ router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), (req, 
   res.json(data);
 });
 
+router.get("/elements/:id/children", requireAuth, (req, res) => {
+  const isId = /^\d+$/.test(req.params.id);
+  const element = db.prepare(`SELECT id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(req.params.id) as any;
+  if (!element) return res.status(404).json({ error: "Element not found" });
+
+  const children = db.prepare(`
+    SELECT e.*, t.name as type_name 
+    FROM elements e 
+    JOIN element_types t ON e.type_id = t.id
+    WHERE e.parent_id = ?
+    ORDER BY e.name ASC
+  `).all(element.id);
+  res.json(children);
+});
+
+router.get("/elements/:id/parent", requireAuth, (req, res) => {
+  const isId = /^\d+$/.test(req.params.id);
+  const element = db.prepare(`SELECT parent_id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(req.params.id) as any;
+  if (!element || !element.parent_id) return res.json(null);
+
+  const parent = db.prepare(`
+    SELECT e.*, t.name as type_name 
+    FROM elements e 
+    JOIN element_types t ON e.type_id = t.id
+    WHERE e.id = ?
+  `).get(element.parent_id);
+  res.json(parent);
+});
+
+router.get("/elements/:id/graph", requireAuth, (req, res) => {
+  const isId = /^\d+$/.test(req.params.id);
+  const element = db.prepare(`SELECT id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(req.params.id) as any;
+  if (!element) return res.status(404).json({ error: "Element not found" });
+
+  const edges = db.prepare(`
+    SELECT ge.*, grt.name as rel_name, se.name as source_name, te.name as target_name
+    FROM graph_edges ge
+    JOIN graph_relationship_types grt ON ge.rel_type_id = grt.id
+    JOIN elements se ON ge.source_el_id = se.id
+    JOIN elements te ON ge.target_el_id = te.id
+    WHERE ge.source_el_id = ? OR ge.target_el_id = ?
+  `).all(element.id, element.id);
+  res.json(edges);
+});
+
 router.post("/elements", requireAuth, checkTypePermission("can_create"), (req, res) => {
   const { name, type_id, parent_id, modular_data } = req.body;
   const baseSlug = slugify(name);

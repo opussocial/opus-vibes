@@ -2,8 +2,34 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
 import { db } from "../db";
+import { slugify } from "../utils";
 
 const router = express.Router();
+
+function ensureUserProfile(userId: number, username: string) {
+  const user = db.prepare("SELECT profile_element_id FROM users WHERE id = ?").get(userId) as any;
+  if (user && user.profile_element_id) return user.profile_element_id;
+
+  const profileType = db.prepare("SELECT id FROM element_types WHERE slug = 'profile'").get() as any;
+  if (!profileType) return null;
+
+  const slug = slugify(username) + "-profile-" + userId;
+  const result = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run(
+    `${username}'s Profile`,
+    slug,
+    profileType.id
+  );
+  const profileId = result.lastInsertRowid;
+
+  db.prepare("UPDATE users SET profile_element_id = ? WHERE id = ?").run(profileId, userId);
+  
+  // Initialize modular data if needed (empty for now)
+  db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(profileId, "");
+  db.prepare("INSERT INTO place (element_id) VALUES (?)").run(profileId);
+  db.prepare("INSERT INTO file (element_id) VALUES (?)").run(profileId);
+
+  return profileId;
+}
 
 router.post("/register", (req, res) => {
   const { username, email, password } = req.body;
@@ -11,8 +37,13 @@ router.post("/register", (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, 10);
     const viewerRole = db.prepare("SELECT id FROM roles WHERE name = 'Viewer'").get() as any;
     const result = db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run(username, email, hashedPassword, viewerRole.id);
-    res.json({ id: result.lastInsertRowid, username, email });
+    const userId = result.lastInsertRowid as number;
+    
+    ensureUserProfile(userId, username);
+    
+    res.json({ id: userId, username, email });
   } catch (err: any) {
+    console.error("Registration error:", err);
     res.status(400).json({ error: "Username or email already exists" });
   }
 });
@@ -21,6 +52,7 @@ router.post("/login", (req, res) => {
   const { username, password } = req.body;
   const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username) as any;
   if (user && bcrypt.compareSync(password, user.password)) {
+    ensureUserProfile(user.id, user.username);
     res.cookie("session_id", user.id.toString(), {
       httpOnly: true,
       secure: true,
@@ -90,8 +122,12 @@ router.get("/google/callback", async (req, res) => {
         username, userInfo.email, userInfo.sub, viewerRole.id
       );
       user = { id: result.lastInsertRowid, username, email: userInfo.email };
-    } else if (!user.google_id) {
-      db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(userInfo.sub, user.id);
+      ensureUserProfile(user.id, username);
+    } else {
+      if (!user.google_id) {
+        db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(userInfo.sub, user.id);
+      }
+      ensureUserProfile(user.id, user.username);
     }
 
     res.cookie("session_id", user.id.toString(), {

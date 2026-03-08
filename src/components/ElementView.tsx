@@ -1,42 +1,90 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { X, Calendar, MapPin, Link as LinkIcon, FileText, Package, Clock, Info, Loader2, Database } from "lucide-react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ElementDetail, User, MODULAR_TABLES } from "../types";
+import { X, Calendar, MapPin, Link as LinkIcon, FileText, Package, Clock, Info, Loader2, Database, ChevronRight, Plus, Trash2, ArrowRight } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { ElementDetail, User, MODULAR_TABLES, Element, GraphEdge, ElementType, RelationshipType } from "../types";
 import { Interactions } from "./Interactions";
+import { Badge } from "./common/Badge";
 
 interface ElementViewProps {
   currentUser: User | null;
+  types: ElementType[];
+  relTypes: RelationshipType[];
 }
 
-export const ElementView = ({ currentUser }: ElementViewProps) => {
+export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementDetail | null>(null);
+  const [parent, setParent] = useState<Element | null>(null);
+  const [children, setChildren] = useState<Element[]>([]);
+  const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddEdge, setShowAddEdge] = useState(false);
+  const [newEdge, setNewEdge] = useState<{ rel_type_id?: number; target_el_id?: number }>({});
+  const [allElements, setAllElements] = useState<Element[]>([]);
+
+  const fetchElementData = async () => {
+    if (!slug) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/elements/${slug}`);
+      if (res.ok) {
+        const data = await res.json();
+        setElement(data);
+        
+        // Fetch related data
+        const [pRes, cRes, gRes, eRes] = await Promise.all([
+          fetch(`/api/elements/${data.id}/parent`),
+          fetch(`/api/elements/${data.id}/children`),
+          fetch(`/api/elements/${data.id}/graph`),
+          fetch("/api/elements")
+        ]);
+        
+        setParent(await pRes.json());
+        setChildren(await cRes.json());
+        setEdges(await gRes.json());
+        setAllElements(await eRes.json());
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      console.error(err);
+      navigate("/");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchElement = async () => {
-      if (!slug) return;
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/elements/${slug}`);
-        if (res.ok) {
-          const data = await res.json();
-          setElement(data);
-        } else {
-          navigate("/");
-        }
-      } catch (err) {
-        console.error(err);
-        navigate("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchElement();
+    fetchElementData();
   }, [slug, navigate]);
+
+  const handleCreateEdge = async () => {
+    if (!newEdge.rel_type_id || !newEdge.target_el_id || !element) return;
+    
+    const res = await fetch("/api/graph", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rel_type_id: newEdge.rel_type_id,
+        source_el_id: element.id,
+        target_el_id: newEdge.target_el_id
+      })
+    });
+    
+    if (res.ok) {
+      setNewEdge({});
+      setShowAddEdge(false);
+      fetchElementData();
+    }
+  };
+
+  const handleDeleteEdge = async (id: number) => {
+    if (!confirm("Remove this relationship?")) return;
+    const res = await fetch(`/api/graph/${id}`, { method: "DELETE" });
+    if (res.ok) fetchElementData();
+  };
 
   if (loading) {
     return (
@@ -47,6 +95,9 @@ export const ElementView = ({ currentUser }: ElementViewProps) => {
   }
 
   if (!element) return null;
+
+  const allowedChildTypes = types.filter(t => t.allowed_parent_types?.includes(element.type_id));
+  const availableRelTypes = relTypes.filter(rt => rt.source_type_id === element.type_id);
 
   return (
     <motion.div
@@ -82,9 +133,210 @@ export const ElementView = ({ currentUser }: ElementViewProps) => {
 
       <div className="flex-1 p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-12">
+            {/* Hierarchy Section */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Hierarchy</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Parent */}
+                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Parent Element</p>
+                  {parent ? (
+                    <Link 
+                      to={`/elements/${parent.slug}`}
+                      className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200 hover:border-zinc-400 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-zinc-100 rounded-lg text-zinc-400 group-hover:text-black transition-colors">
+                          <Database size={16} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{parent.name}</p>
+                          <p className="text-[10px] text-zinc-400">{parent.type_name}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-zinc-300" />
+                    </Link>
+                  ) : (
+                    <p className="text-sm text-zinc-400 italic">No parent element (Root)</p>
+                  )}
+                </div>
+
+                {/* Children */}
+                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Child Elements</p>
+                    <div className="flex gap-2">
+                      {allowedChildTypes.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => navigate(`/elements/new?type=${t.slug}&parent=${element.id}`)}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-black text-white rounded-lg text-[10px] font-bold hover:bg-zinc-800 transition-all"
+                        >
+                          <Plus size={10} />
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {children.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {children.map(child => (
+                        <Link 
+                          key={child.id}
+                          to={`/elements/${child.slug}`}
+                          className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200 hover:border-zinc-400 transition-all group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-zinc-100 rounded-lg text-zinc-400 group-hover:text-black transition-colors">
+                              <Database size={16} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">{child.name}</p>
+                              <p className="text-[10px] text-zinc-400">{child.type_name}</p>
+                            </div>
+                          </div>
+                          <ChevronRight size={16} className="text-zinc-300" />
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-400 italic">No child elements</p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Relationships Section */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Graph Relationships</h3>
+                <button 
+                  onClick={() => setShowAddEdge(!showAddEdge)}
+                  className="p-1.5 hover:bg-zinc-100 rounded-lg text-zinc-400 hover:text-black transition-colors"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+
+              {showAddEdge && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="bg-zinc-900 rounded-2xl p-6 text-white space-y-4"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Relationship Type</label>
+                      <select 
+                        value={newEdge.rel_type_id || ""}
+                        onChange={e => setNewEdge({ ...newEdge, rel_type_id: parseInt(e.target.value) })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10"
+                      >
+                        <option value="">Select...</option>
+                        {availableRelTypes.map(rt => (
+                          <option key={rt.id} value={rt.id}>{rt.name} (→ {rt.target_type_name})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Target Element</label>
+                      <select 
+                        value={newEdge.target_el_id || ""}
+                        onChange={e => setNewEdge({ ...newEdge, target_el_id: parseInt(e.target.value) })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10"
+                      >
+                        <option value="">Select...</option>
+                        {allElements.filter(e => {
+                          const rt = availableRelTypes.find(rt => rt.id === newEdge.rel_type_id);
+                          return rt && e.type_id === rt.target_type_id && e.id !== element.id;
+                        }).map(e => (
+                          <option key={e.id} value={e.id}>{e.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button 
+                      onClick={() => setShowAddEdge(false)}
+                      className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-xs font-bold transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleCreateEdge}
+                      disabled={!newEdge.rel_type_id || !newEdge.target_el_id}
+                      className="flex-1 px-4 py-2 bg-white text-black hover:bg-zinc-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                    >
+                      Link Element
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              <div className="space-y-3">
+                {edges.length > 0 ? (
+                  edges.map(edge => {
+                    const isSource = edge.source_el_id === element.id;
+                    const otherName = isSource ? edge.target_name : edge.source_name;
+                    const otherSlug = allElements.find(e => e.id === (isSource ? edge.target_el_id : edge.source_el_id))?.slug;
+
+                    return (
+                      <div key={edge.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm group">
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-center">
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter mb-1">
+                              {isSource ? "Source" : "Target"}
+                            </span>
+                            <div className={`p-2 rounded-lg ${isSource ? "bg-blue-50 text-blue-500" : "bg-emerald-50 text-emerald-500"}`}>
+                              <LinkIcon size={14} />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <div className="text-center">
+                              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">Relationship</p>
+                              <Badge color="zinc">{edge.rel_name}</Badge>
+                            </div>
+                            <ArrowRight size={14} className="text-zinc-300" />
+                            <div>
+                              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">
+                                {isSource ? "Target" : "Source"}
+                              </p>
+                              {otherSlug ? (
+                                <Link to={`/elements/${otherSlug}`} className="text-sm font-bold hover:underline">
+                                  {otherName}
+                                </Link>
+                              ) : (
+                                <p className="text-sm font-bold">{otherName}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <button 
+                          onClick={() => handleDeleteEdge(edge.id)}
+                          className="p-2 text-zinc-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-zinc-400 italic">No graph relationships defined</p>
+                )}
+              </div>
+            </section>
+
             {/* Modular Data Rendering */}
-            {MODULAR_TABLES.map(table => {
+            <section className="space-y-8 pt-8 border-t border-zinc-100">
+              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Details</h3>
+              {MODULAR_TABLES.map(table => {
               const data = element[table.value];
               if (!data || Object.keys(data).length === 0) return null;
 
@@ -160,6 +412,7 @@ export const ElementView = ({ currentUser }: ElementViewProps) => {
                 </div>
               );
             })}
+            </section>
           </div>
 
           <div className="lg:col-span-1 border-l border-zinc-100 pl-8">
