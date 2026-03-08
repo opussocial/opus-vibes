@@ -80,18 +80,18 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-white flex items-center justify-center p-6">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-3xl border border-zinc-200 shadow-xl overflow-hidden"
+        className="w-full max-w-md bg-white rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden"
       >
-        <div className="p-8 border-b border-zinc-100 bg-zinc-50/50 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg">
+        <div className="p-8 border-b border-zinc-100 bg-marine flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-brand-yellow rounded-2xl flex items-center justify-center text-marine mb-4 shadow-lg border-4 border-marine-light">
             <Database size={32} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">FlexCatalog</h1>
-          <p className="text-zinc-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-white">FlexCatalog</h1>
+          <p className="text-brand-yellow/80 text-sm mt-1">
             {mode === "login" ? "Welcome back! Please login to your account." : 
              mode === "register" ? "Create a new account to get started." : 
              "Reset your account password."}
@@ -162,7 +162,7 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           <button 
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? "Processing..." : 
              mode === "login" ? "Login" : 
@@ -193,14 +193,14 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
               <>
                 <p className="text-sm text-zinc-500">
                   Don't have an account?{" "}
-                  <button type="button" onClick={() => setMode("register")} className="font-bold text-black hover:underline">Register</button>
+                  <button type="button" onClick={() => setMode("register")} className="font-bold text-marine hover:underline">Register</button>
                 </p>
                 <button type="button" onClick={() => setMode("reset")} className="text-xs text-zinc-400 hover:text-zinc-600">Forgot password?</button>
               </>
             ) : (
               <p className="text-sm text-zinc-500">
                 Already have an account?{" "}
-                <button type="button" onClick={() => setMode("login")} className="font-bold text-black hover:underline">Login</button>
+                <button type="button" onClick={() => setMode("login")} className="font-bold text-marine hover:underline">Login</button>
               </p>
             )}
           </div>

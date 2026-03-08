@@ -33,6 +33,29 @@ export const SchemaTypes = ({
 
   const isCreating = location.pathname.endsWith("/new");
 
+  const wouldCreateCycle = (targetTypeId: number, potentialParentId: number) => {
+    if (targetTypeId === potentialParentId) return true;
+    
+    const visited = new Set<number>();
+    const check = (currentId: number): boolean => {
+      if (visited.has(currentId)) return false;
+      visited.add(currentId);
+
+      if (currentId === targetTypeId) return true;
+      
+      const currentType = types.find(t => t.id === currentId);
+      if (!currentType) return false;
+      
+      const parents = currentType.allowed_parent_types || [];
+      for (const parentId of parents) {
+        if (check(parentId)) return true;
+      }
+      return false;
+    };
+
+    return check(potentialParentId);
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       <Routes>
@@ -50,7 +73,7 @@ export const SchemaTypes = ({
               {hasPermission("manage_types") && (
                 <button 
                   onClick={() => navigate("/types/new")}
-                  className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-xl font-bold hover:bg-zinc-800 transition-all"
+                  className="flex items-center gap-2 bg-marine text-brand-yellow px-5 py-2.5 rounded-xl font-bold hover:bg-marine-light transition-all shadow-lg"
                 >
                   <Plus size={20} />
                   Create Type
@@ -82,7 +105,7 @@ export const SchemaTypes = ({
                               setNewType(type);
                               navigate(`/types/${type.slug}/edit`);
                             }}
-                            className="p-1 hover:bg-zinc-100 text-zinc-300 hover:text-zinc-600 rounded transition-colors"
+                            className="p-1 hover:bg-marine/5 text-zinc-300 hover:text-marine rounded transition-colors"
                           >
                             <Edit2 size={14} />
                           </button>
@@ -146,6 +169,7 @@ export const SchemaTypes = ({
             setNewType={setNewType}
             types={types}
             toggleProp={toggleProp}
+            wouldCreateCycle={wouldCreateCycle}
             MODULAR_TABLES={MODULAR_TABLES}
             navigate={navigate}
           />
@@ -157,6 +181,7 @@ export const SchemaTypes = ({
             setNewType={setNewType}
             handleUpdateType={handleUpdateType}
             toggleProp={toggleProp}
+            wouldCreateCycle={wouldCreateCycle}
             MODULAR_TABLES={MODULAR_TABLES}
             navigate={navigate}
           />
@@ -166,7 +191,7 @@ export const SchemaTypes = ({
   );
 };
 
-const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleProp, MODULAR_TABLES, navigate }: any) => {
+const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleProp, wouldCreateCycle, MODULAR_TABLES, navigate }: any) => {
   const { slug } = useParams();
   const type = types.find((t: any) => t.slug === slug);
 
@@ -189,6 +214,7 @@ const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleP
       setNewType={setNewType}
       types={types}
       toggleProp={toggleProp}
+      wouldCreateCycle={wouldCreateCycle}
       MODULAR_TABLES={MODULAR_TABLES}
       navigate={navigate}
       disabledProps={hasElements}
@@ -197,7 +223,7 @@ const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleP
   );
 };
 
-const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, toggleProp, MODULAR_TABLES, navigate, disabledProps, warning }: any) => {
+const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, toggleProp, wouldCreateCycle, MODULAR_TABLES, navigate, disabledProps, warning }: any) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -259,7 +285,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
                     onClick={() => toggleProp(table.value, table.label)}
                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                       newType.properties?.find((p: any) => p.table_name === table.value)
-                        ? "bg-black border-black text-white shadow-md"
+                        ? "bg-marine border-marine text-brand-yellow shadow-md"
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
                     }`}
                   >
@@ -291,32 +317,44 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
             This restricts the "Parent Element" selection in the editor.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {types.map((t: any) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => {
-                  const exists = newType.allowed_parent_types?.includes(t.id);
-                  if (exists) {
-                    setNewType({ ...newType, allowed_parent_types: newType.allowed_parent_types?.filter((id: any) => id !== t.id) });
-                  } else {
-                    setNewType({ ...newType, allowed_parent_types: [...(newType.allowed_parent_types || []), t.id] });
-                  }
-                }}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                  newType.allowed_parent_types?.includes(t.id)
-                    ? "bg-zinc-900 border-zinc-900 text-white shadow-md"
-                    : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
-                }`}
-              >
-                <div className={`p-2 rounded-lg ${
-                  newType.allowed_parent_types?.includes(t.id) ? "bg-white/20" : "bg-zinc-100"
-                }`}>
-                  <Database size={16} />
-                </div>
-                <span className="text-sm font-bold">{t.name}</span>
-              </button>
-            ))}
+            {types.map((t: any) => {
+              const isCycle = newType.id && wouldCreateCycle(newType.id, t.id);
+              const isSelected = newType.allowed_parent_types?.includes(t.id);
+              
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  disabled={isCycle && !isSelected}
+                  onClick={() => {
+                    const exists = newType.allowed_parent_types?.includes(t.id);
+                    if (exists) {
+                      setNewType({ ...newType, allowed_parent_types: newType.allowed_parent_types?.filter((id: any) => id !== t.id) });
+                    } else {
+                      setNewType({ ...newType, allowed_parent_types: [...(newType.allowed_parent_types || []), t.id] });
+                    }
+                  }}
+                  title={isCycle && !isSelected ? "Selecting this would create a circular dependency" : ""}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                    isSelected
+                      ? "bg-marine border-marine text-brand-yellow shadow-md"
+                      : isCycle 
+                        ? "bg-zinc-50 border-zinc-100 text-zinc-300 cursor-not-allowed"
+                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${
+                    isSelected ? "bg-white/20" : "bg-zinc-100"
+                  }`}>
+                    <Database size={16} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold">{t.name}</span>
+                    {isCycle && !isSelected && <span className="text-[8px] uppercase tracking-tighter text-red-400 font-bold">Cycle Risk</span>}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -330,7 +368,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
           </button>
           <button 
             type="submit"
-            className="flex-[2] px-6 py-4 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg"
+            className="flex-[2] px-6 py-4 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all flex items-center justify-center gap-2 shadow-lg"
           >
             <Save size={20} />
             {buttonText}

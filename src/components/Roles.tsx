@@ -46,7 +46,7 @@ export const Roles = ({
               {hasPermission("manage_roles") && (
                 <button 
                   onClick={() => navigate("/roles/new")}
-                  className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-xl font-bold hover:bg-zinc-800 transition-all"
+                  className="flex items-center gap-2 bg-marine text-brand-yellow px-5 py-2.5 rounded-xl font-bold hover:bg-marine-light transition-all shadow-lg"
                 >
                   <Plus size={20} />
                   Create Role
@@ -69,8 +69,8 @@ export const Roles = ({
                 <div key={role.id} className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
                   <div className="p-8 border-b border-zinc-100 bg-zinc-50/50">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-2xl font-bold">{role.name}</h3>
-                      <Badge color="purple">Slug: {role.slug}</Badge>
+                      <h3 className="text-2xl font-bold text-marine">{role.name}</h3>
+                      <Badge color="zinc">Slug: {role.slug}</Badge>
                     </div>
                     <p className="text-zinc-500">{role.description}</p>
                   </div>
@@ -83,16 +83,16 @@ export const Roles = ({
                           const isActive = role.permissions.some(rp => rp.id === p.id);
                           const isSuperAdmin = role.name === "Super Admin";
                           return (
-                            <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isActive ? "bg-purple-50 border-purple-100" : "bg-zinc-50 border-zinc-100 hover:border-zinc-200"}`}>
+                            <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isActive ? "bg-marine/5 border-marine/10" : "bg-zinc-50 border-zinc-100 hover:border-zinc-200"}`}>
                               <input 
                                 type="checkbox" 
                                 checked={isActive}
                                 disabled={isSuperAdmin || !hasPermission("manage_roles")}
                                 onChange={(e) => updateRoleGlobalPermission(role.slug, p.id, e.target.checked)}
-                                className="w-4 h-4 rounded border-zinc-300 text-purple-600 focus:ring-purple-500"
+                                className="w-4 h-4 rounded border-zinc-300 text-marine focus:ring-marine"
                               />
                               <div>
-                                <p className={`text-sm font-bold ${isActive ? "text-purple-900" : "text-zinc-700"}`}>{p.name}</p>
+                                <p className={`text-sm font-bold ${isActive ? "text-marine" : "text-zinc-700"}`}>{p.name}</p>
                                 <p className="text-[10px] text-zinc-400">{p.description}</p>
                               </div>
                             </label>
@@ -197,7 +197,7 @@ export const Roles = ({
                 </button>
                 <button 
                   type="submit"
-                  className="flex-[2] px-6 py-4 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-[2] px-6 py-4 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Save size={20} />
                   Create Role

@@ -74,7 +74,7 @@ export const ElementEditor = ({
   if (loading || !editingElement) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="animate-spin text-zinc-300" size={48} />
+        <Loader2 className="animate-spin text-marine" size={48} />
       </div>
     );
   }
@@ -93,19 +93,19 @@ export const ElementEditor = ({
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-zinc-200 overflow-hidden flex flex-col"
     >
-      <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+      <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-marine">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Badge color="blue">{editingElement.type_name}</Badge>
-            <span className="text-xs text-zinc-400 font-medium">#{editingElement.id || "New"}</span>
+            <span className="text-xs text-brand-yellow/60 font-medium">#{editingElement.id || "New"}</span>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">
+          <h2 className="text-2xl font-bold tracking-tight text-white">
             {!editingElement.id ? "Create New" : "Edit"} {editingElement.type_name}
           </h2>
         </div>
         <button 
           onClick={() => navigate(-1)}
-          className="p-2 hover:bg-zinc-200 rounded-full transition-colors"
+          className="p-2 hover:bg-white/10 text-white rounded-full transition-colors"
         >
           <X size={24} />
         </button>
@@ -434,7 +434,7 @@ export const ElementEditor = ({
           <button 
             type="submit"
             disabled={!canEdit}
-            className="flex-1 px-6 py-4 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 px-6 py-4 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Save size={20} />
             {canEdit ? "Save Changes" : "Read Only"}

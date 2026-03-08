@@ -14,8 +14,8 @@ export const SidebarItem = ({ icon: Icon, label, active, to }: SidebarItemProps)
     to={to}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
       active 
-        ? "bg-black text-white shadow-md" 
-        : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+        ? "bg-marine text-brand-yellow shadow-lg shadow-marine/20" 
+        : "text-zinc-500 hover:bg-marine/5 hover:text-marine"
     }`}
   >
     <Icon size={20} />

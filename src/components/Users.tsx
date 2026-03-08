@@ -21,7 +21,7 @@ export const Users = ({ users, roles, currentUser, updateUserRole }: UsersProps)
     >
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-marine">User Management</h2>
           <p className="text-zinc-500 mt-1">Manage system users and assign roles.</p>
         </div>
       </div>
@@ -51,10 +51,10 @@ export const Users = ({ users, roles, currentUser, updateUserRole }: UsersProps)
                       {user.username[0].toUpperCase()}
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold flex items-center gap-2">
+                      <span className="font-bold flex items-center gap-2 text-marine">
                         {user.username}
                         {user.id === currentUser?.id && (
-                          <span className="px-1.5 py-0.5 bg-black text-white text-[8px] rounded uppercase tracking-tighter">You</span>
+                          <span className="px-1.5 py-0.5 bg-brand-yellow text-marine text-[8px] rounded uppercase tracking-tighter font-bold">You</span>
                         )}
                       </span>
                     </div>

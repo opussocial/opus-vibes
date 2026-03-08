@@ -50,7 +50,7 @@ export const Relationships = ({
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight">Relationships</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-marine">Relationships</h2>
                 <p className="text-zinc-500 mt-1">Manage tree hierarchy and graph connections.</p>
               </div>
             </div>
@@ -58,11 +58,11 @@ export const Relationships = ({
             {/* Schema Level Relationships */}
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold">Allowed Graph Relationships</h3>
+                <h3 className="text-xl font-bold text-marine">Allowed Graph Relationships</h3>
                 {hasPermission("manage_types") && (
                   <button 
                     onClick={() => navigate("/relationships/type/new")}
-                    className="px-4 py-2 bg-black text-white rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-marine text-brand-yellow rounded-xl font-bold text-sm hover:bg-marine-light transition-all flex items-center gap-2 shadow-lg"
                   >
                     <Plus size={16} /> Define Relationship
                   </button>
@@ -101,10 +101,10 @@ export const Relationships = ({
             {/* Instance Level Graph */}
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold">Graph Connections</h3>
+                <h3 className="text-xl font-bold text-marine">Graph Connections</h3>
                 <button 
                   onClick={() => navigate("/relationships/edge/new")}
-                  className="px-4 py-2 bg-zinc-100 text-zinc-900 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-marine/5 text-marine rounded-xl font-bold text-sm hover:bg-marine/10 transition-all flex items-center gap-2"
                 >
                   <Plus size={16} /> Link Elements
                 </button>
@@ -162,11 +162,11 @@ export const Relationships = ({
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-3xl shadow-xl border border-zinc-200 overflow-hidden"
           >
-            <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-2xl font-bold tracking-tight">Define Relationship Type</h2>
+            <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-marine">
+              <h2 className="text-2xl font-bold tracking-tight text-white">Define Relationship Type</h2>
               <button 
                 onClick={() => navigate("/relationships")} 
-                className="p-2 hover:bg-zinc-200 rounded-full transition-colors"
+                className="p-2 hover:bg-white/10 text-white rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -217,7 +217,7 @@ export const Relationships = ({
                 </button>
                 <button 
                   onClick={createRelType}
-                  className="flex-[2] px-6 py-4 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-[2] px-6 py-4 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Save size={20} />
                   Create Relationship
@@ -233,11 +233,11 @@ export const Relationships = ({
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-3xl shadow-xl border border-zinc-200 overflow-hidden"
           >
-            <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-2xl font-bold tracking-tight">Link Elements</h2>
+            <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-marine">
+              <h2 className="text-2xl font-bold tracking-tight text-white">Link Elements</h2>
               <button 
                 onClick={() => navigate("/relationships")} 
-                className="p-2 hover:bg-zinc-200 rounded-full transition-colors"
+                className="p-2 hover:bg-white/10 text-white rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -293,7 +293,7 @@ export const Relationships = ({
                 </button>
                 <button 
                   onClick={createEdge}
-                  className="flex-[2] px-6 py-4 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-[2] px-6 py-4 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <LinkIcon size={20} />
                   Link Elements

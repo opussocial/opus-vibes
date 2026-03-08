@@ -31,6 +31,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
+  const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
   const children = allElements.filter(child => child.parent_id === el.id);
   const perm = getTypePermission(el.type_id);
   
@@ -51,14 +52,14 @@ const ElementRow: React.FC<ElementRowProps> = ({
             {children.length > 0 ? (
               <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-1 hover:bg-zinc-100 rounded text-zinc-400"
+                className="p-1 hover:bg-marine/5 rounded text-marine/40 hover:text-marine transition-colors"
               >
                 {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
             ) : (
               <div className="w-6" />
             )}
-            <div className="w-10 h-10 bg-zinc-100 rounded-xl flex items-center justify-center text-zinc-400">
+            <div className="w-10 h-10 bg-marine/5 rounded-xl flex items-center justify-center text-marine">
               {el.type_name === "Article" && <FileText size={20} />}
               {el.type_name === "Product" && <Package size={20} />}
               {el.type_name === "Event" && <MapPin size={20} />}
@@ -67,7 +68,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-base">{el.name}</h3>
+              <h3 className="font-bold text-base text-marine">{el.name}</h3>
               <Badge color={el.type_name === "Article" ? "blue" : el.type_name === "Product" ? "green" : "purple"}>
                 {el.type_name}
               </Badge>
@@ -81,29 +82,55 @@ const ElementRow: React.FC<ElementRowProps> = ({
         <div className="flex items-center gap-2">
           {/* Add Child Dropdown */}
           {allowedChildTypes.length > 0 && perm.can_create && (
-            <div className="relative group/add">
-              <button className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-400 hover:text-black transition-colors flex items-center gap-1">
+            <div className="relative">
+              <button 
+                onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
+                className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${isAddDropdownOpen ? 'bg-marine text-brand-yellow' : 'hover:bg-marine/5 text-marine/60 hover:text-marine'}`}
+              >
                 <Plus size={16} />
-                <span className="text-[10px] font-bold uppercase hidden group-hover/add:inline">Add Child</span>
+                <span className="text-[10px] font-bold uppercase">Add Child</span>
               </button>
-              <div className="absolute right-0 top-full mt-1 bg-white border border-zinc-200 rounded-xl shadow-xl py-2 w-48 z-10 hidden group-hover/add:block">
-                {allowedChildTypes.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => navigate(`/elements/new?type=${t.slug}&parent=${el.id}`)}
-                    className="w-full text-left px-4 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black"
-                  >
-                    New {t.name}
-                  </button>
-                ))}
-              </div>
+              
+              <AnimatePresence>
+                {isAddDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setIsAddDropdownOpen(false)} 
+                    />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 top-full mt-2 bg-white border border-zinc-100 rounded-xl shadow-2xl py-2 w-48 z-20 overflow-hidden"
+                    >
+                      <div className="px-4 py-1.5 border-b border-zinc-50 mb-1">
+                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Select Type</p>
+                      </div>
+                      {allowedChildTypes.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => {
+                            navigate(`/elements/new?type=${t.slug}&parent=${el.id}`);
+                            setIsAddDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-xs font-medium text-zinc-600 hover:bg-marine/5 hover:text-marine transition-colors flex items-center gap-2"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-200" />
+                          {t.name}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
               onClick={() => navigate(`/elements/${el.slug}`)}
-              className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
+              className="p-2 hover:bg-marine/5 rounded-lg text-marine/60 hover:text-marine transition-colors"
               title="View Details"
             >
               <Eye size={16} />
@@ -111,7 +138,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
             {perm.can_edit && (
               <button 
                 onClick={() => navigate(`/elements/${el.slug}/edit`)}
-                className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
+                className="p-2 hover:bg-marine/5 rounded-lg text-marine/60 hover:text-marine transition-colors"
                 title="Edit"
               >
                 <Edit3 size={16} />
@@ -174,7 +201,7 @@ export const Dashboard = ({
     >
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Catalog Elements</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-marine">Catalog Elements</h2>
           <p className="text-zinc-500 mt-1">Manage all your modular content elements here.</p>
         </div>
         <div className="flex gap-3">
@@ -183,7 +210,7 @@ export const Dashboard = ({
             <input 
               type="text" 
               placeholder="Search elements..." 
-              className="pl-10 pr-4 py-2 bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-zinc-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/10 transition-all w-64"
             />
           </div>
         </div>

@@ -75,7 +75,7 @@ export const Profile = ({ user }: ProfileProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-marine" />
       </div>
     );
   }
@@ -90,7 +90,7 @@ export const Profile = ({ user }: ProfileProps) => {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Your Profile</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-marine">Your Profile</h2>
           <p className="text-zinc-500 mt-1">Manage your account information and personal details.</p>
         </div>
         <Badge color={user.role_name === "Super Admin" ? "purple" : user.role_name === "Editor" ? "blue" : "zinc"}>
@@ -102,10 +102,10 @@ export const Profile = ({ user }: ProfileProps) => {
         {/* Left Column: Account Info */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-            <div className="h-24 bg-gradient-to-r from-zinc-100 to-zinc-200" />
+            <div className="h-24 bg-marine" />
             <div className="px-6 pb-6">
               <div className="relative -mt-10 mb-4">
-                <div className="w-20 h-20 bg-white rounded-2xl shadow-lg border-4 border-white flex items-center justify-center text-zinc-400 overflow-hidden">
+                <div className="w-20 h-20 bg-white rounded-2xl shadow-lg border-4 border-white flex items-center justify-center text-marine overflow-hidden">
                   {profile?.file?.url ? (
                     <img src={profile.file.url} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
@@ -113,7 +113,7 @@ export const Profile = ({ user }: ProfileProps) => {
                   )}
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-zinc-900">{user.username}</h3>
+              <h3 className="text-xl font-bold text-marine">{user.username}</h3>
               <p className="text-sm text-zinc-500 mb-6">{user.email}</p>
               
               <div className="space-y-4 pt-6 border-t border-zinc-100">
@@ -149,14 +149,14 @@ export const Profile = ({ user }: ProfileProps) => {
         <div className="lg:col-span-2">
           {profile ? (
             <form onSubmit={handleSave} className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
+              <div className="p-8 border-b border-zinc-100 bg-marine flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold">Personal Information</h3>
-                  <p className="text-sm text-zinc-500">This information is stored as a Profile element.</p>
+                  <h3 className="text-xl font-bold text-white">Personal Information</h3>
+                  <p className="text-sm text-brand-yellow/80">This information is stored as a Profile element.</p>
                 </div>
                 <Link 
                   to={`/elements/${profile.slug}`}
-                  className="flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-black transition-colors"
+                  className="flex items-center gap-2 text-xs font-bold text-brand-yellow hover:text-white transition-colors"
                 >
                   View as Element <ExternalLink size={14} />
                 </Link>
@@ -225,7 +225,7 @@ export const Profile = ({ user }: ProfileProps) => {
                   <button 
                     type="submit"
                     disabled={saving}
-                    className="px-6 py-3 bg-black text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                    className="px-6 py-3 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg"
                   >
                     {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                     Save Changes

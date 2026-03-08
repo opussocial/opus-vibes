@@ -89,7 +89,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="animate-spin text-zinc-300" size={48} />
+        <Loader2 className="animate-spin text-marine" size={48} />
       </div>
     );
   }
@@ -105,18 +105,18 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-zinc-200 overflow-hidden flex flex-col"
     >
-      <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+      <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-marine">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white shadow-lg">
+          <div className="w-12 h-12 bg-brand-yellow rounded-2xl flex items-center justify-center text-marine shadow-lg border-2 border-marine-light">
             <Info size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight">{element.name}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-white">{element.name}</h2>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 rounded text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2 py-0.5 bg-white/20 text-brand-yellow rounded text-[10px] font-bold uppercase tracking-wider">
                 {element.type_name}
               </span>
-              <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+              <span className="text-[10px] text-brand-yellow/60 flex items-center gap-1">
                 <Clock size={10} />
                 Updated {new Date(element.updated_at).toLocaleDateString()}
               </span>
@@ -125,7 +125,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
         </div>
         <button 
           onClick={() => navigate(-1)} 
-          className="p-2 hover:bg-zinc-200 rounded-xl transition-colors"
+          className="p-2 hover:bg-white/10 text-white rounded-xl transition-colors"
         >
           <X size={20} />
         </button>
@@ -174,7 +174,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                         <button
                           key={t.id}
                           onClick={() => navigate(`/elements/new?type=${t.slug}&parent=${element.id}`)}
-                          className="flex items-center gap-1.5 px-2 py-1 bg-black text-white rounded-lg text-[10px] font-bold hover:bg-zinc-800 transition-all"
+                          className="flex items-center gap-1.5 px-2 py-1 bg-marine text-brand-yellow rounded-lg text-[10px] font-bold hover:bg-marine-light transition-all shadow-sm"
                         >
                           <Plus size={10} />
                           {t.name}
@@ -227,35 +227,35 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="bg-zinc-900 rounded-2xl p-6 text-white space-y-4"
+                  className="bg-marine rounded-2xl p-6 text-white space-y-4"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Relationship Type</label>
+                      <label className="block text-[10px] font-bold text-brand-yellow/60 uppercase mb-2">Relationship Type</label>
                       <select 
                         value={newEdge.rel_type_id || ""}
                         onChange={e => setNewEdge({ ...newEdge, rel_type_id: parseInt(e.target.value) })}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10"
+                        className="w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10"
                       >
-                        <option value="">Select...</option>
+                        <option value="" className="text-black">Select...</option>
                         {availableRelTypes.map(rt => (
-                          <option key={rt.id} value={rt.id}>{rt.name} (→ {rt.target_type_name})</option>
+                          <option key={rt.id} value={rt.id} className="text-black">{rt.name} (→ {rt.target_type_name})</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Target Element</label>
+                      <label className="block text-[10px] font-bold text-brand-yellow/60 uppercase mb-2">Target Element</label>
                       <select 
                         value={newEdge.target_el_id || ""}
                         onChange={e => setNewEdge({ ...newEdge, target_el_id: parseInt(e.target.value) })}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10"
+                        className="w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10"
                       >
-                        <option value="">Select...</option>
+                        <option value="" className="text-black">Select...</option>
                         {allElements.filter(e => {
                           const rt = availableRelTypes.find(rt => rt.id === newEdge.rel_type_id);
                           return rt && e.type_id === rt.target_type_id && e.id !== element.id;
                         }).map(e => (
-                          <option key={e.id} value={e.id}>{e.name}</option>
+                          <option key={e.id} value={e.id} className="text-black">{e.name}</option>
                         ))}
                       </select>
                     </div>
@@ -263,14 +263,14 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                   <div className="flex gap-3 pt-2">
                     <button 
                       onClick={() => setShowAddEdge(false)}
-                      className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-xs font-bold transition-all"
+                      className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-all"
                     >
                       Cancel
                     </button>
                     <button 
                       onClick={handleCreateEdge}
                       disabled={!newEdge.rel_type_id || !newEdge.target_el_id}
-                      className="flex-1 px-4 py-2 bg-white text-black hover:bg-zinc-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                      className="flex-1 px-4 py-2 bg-brand-yellow text-marine hover:bg-yellow-400 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                     >
                       Link Element
                     </button>

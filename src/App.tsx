@@ -353,9 +353,9 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-zinc-50 flex items-center justify-center">
+      <div className="h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-zinc-200 border-t-black rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-zinc-100 border-t-marine rounded-full animate-spin" />
           <p className="text-zinc-400 font-medium">Loading FlexCatalog...</p>
         </div>
       </div>
@@ -369,15 +369,20 @@ export default function App() {
     }} />;
   }
 
+  const isElementView = location.pathname.startsWith("/elements/") && !location.pathname.endsWith("/edit") && location.pathname !== "/elements/new";
+  const currentElementSlug = isElementView ? location.pathname.split("/")[2] : null;
+  const currentElement = elements.find(e => e.slug === currentElementSlug);
+  const allowedChildTypes = currentElement ? types.filter(t => t.allowed_parent_types?.includes(currentElement.type_id)) : [];
+
   return (
-    <div className="flex h-screen bg-zinc-50 text-zinc-900 font-sans">
+    <div className="flex h-screen bg-white text-zinc-900 font-sans">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-zinc-200 bg-white p-6 flex flex-col gap-8">
+      <aside className="w-64 border-r border-zinc-100 bg-zinc-50/30 p-6 flex flex-col gap-8">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white">
+          <div className="w-10 h-10 bg-marine rounded-xl flex items-center justify-center text-brand-yellow shadow-lg shadow-marine/20">
             <Database size={24} />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">FlexCatalog</h1>
+          <h1 className="text-xl font-bold tracking-tight text-marine">FlexCatalog</h1>
         </div>
 
         <nav className="flex flex-col gap-2">
@@ -422,29 +427,29 @@ export default function App() {
         </nav>
 
         <div className="mt-auto space-y-6">
-          <div className="p-4 bg-zinc-900 rounded-2xl text-white">
+          <div className="p-4 bg-marine rounded-2xl text-white shadow-xl shadow-marine/10">
             <div className="flex items-center justify-between mb-4">
               <Link 
                 to="/profile"
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
               >
-                <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-marine-light rounded-full flex items-center justify-center text-brand-yellow">
                   <UserIcon size={16} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold opacity-50 uppercase">User</p>
+                  <p className="text-[10px] font-bold text-brand-yellow/60 uppercase tracking-widest">User</p>
                   <p className="text-sm font-bold truncate w-24">{currentUser?.username}</p>
                 </div>
               </Link>
               <button 
                 onClick={handleLogout}
-                className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                className="p-1.5 hover:bg-marine-light rounded-lg text-white/60 hover:text-brand-yellow transition-colors"
                 title="Logout"
               >
                 <LogOut size={16} />
               </button>
             </div>
-            <div className="px-2 py-1 bg-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
+            <div className="px-2 py-1 bg-marine-dark/50 rounded-lg text-[10px] font-bold text-brand-yellow uppercase tracking-widest text-center">
               {currentUser?.role_name}
             </div>
           </div>
@@ -547,7 +552,7 @@ export default function App() {
       </main>
 
       {/* FAB Button */}
-      {["/", "/types", "/relationships", "/roles"].some(path => location.pathname === path) && (
+      {((["/", "/types", "/relationships", "/roles"].some(path => location.pathname === path)) || (isElementView && allowedChildTypes.length > 0)) && (
         <div className="fixed bottom-8 right-8 z-40">
           <AnimatePresence>
             {location.pathname === "/" && isFabOpen && (
@@ -579,11 +584,41 @@ export default function App() {
                 })}
               </motion.div>
             )}
+
+            {isElementView && isFabOpen && allowedChildTypes.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                className="absolute bottom-16 right-0 bg-white border border-zinc-200 rounded-2xl shadow-2xl py-3 w-56 overflow-hidden"
+              >
+                <div className="px-4 py-2 border-b border-zinc-100 mb-2">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Add Child Element</p>
+                </div>
+                {allowedChildTypes.map(t => {
+                  const perm = getTypePermission(t.id);
+                  if (!perm.can_create) return null;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        navigate(`/elements/new?type=${t.slug}&parent=${currentElement?.id}`);
+                        setIsFabOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-zinc-200" />
+                      {t.name}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
           </AnimatePresence>
 
           <button
             onClick={() => {
-              if (location.pathname === "/") {
+              if (location.pathname === "/" || isElementView) {
                 setIsFabOpen(!isFabOpen);
               } else if (location.pathname === "/types") {
                 navigate("/types/new");
@@ -593,12 +628,12 @@ export default function App() {
                 navigate("/roles/new");
               }
             }}
-            className="w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group"
+            className="w-14 h-14 bg-brand-yellow text-marine rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group border-4 border-white"
           >
             <Plus size={24} className={`transition-transform duration-300 ${isFabOpen ? 'rotate-45' : ''}`} />
             
-            <div className="absolute right-full mr-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest">
-              {location.pathname === "/" ? "Add Element" : location.pathname === "/types" ? "Add Schema Type" : location.pathname === "/relationships" ? "Add Relationship" : location.pathname === "/roles" ? "Add Role" : "Quick Add"}
+            <div className="absolute right-full mr-4 px-3 py-1.5 bg-marine text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest shadow-lg">
+              {location.pathname === "/" ? "Add Element" : isElementView ? "Add Child" : location.pathname === "/types" ? "Add Schema Type" : location.pathname === "/relationships" ? "Add Relationship" : location.pathname === "/roles" ? "Add Role" : "Quick Add"}
             </div>
           </button>
         </div>

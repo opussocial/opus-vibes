@@ -33,6 +33,13 @@ router.post("/types", requirePermission("manage_types"), (req, res) => {
       }
 
       if (allowed_parent_types && Array.isArray(allowed_parent_types)) {
+        // Circular dependency check (though less likely for a new type, it could still happen if it references itself)
+        for (const parentId of allowed_parent_types) {
+          if (parentId === typeId) {
+            throw new Error("A type cannot be its own parent.");
+          }
+        }
+
         const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
         for (const parentId of allowed_parent_types) {
           insertHierarchy.run(parentId, typeId);
@@ -88,12 +95,30 @@ router.put("/types/:idOrSlug", requirePermission("manage_types"), (req, res) => 
       }
 
       // Update hierarchy
-      db.prepare("DELETE FROM type_hierarchy WHERE child_type_id = ?").run(type.id);
       if (allowed_parent_types && Array.isArray(allowed_parent_types)) {
+        // Circular dependency check
+        const checkCycle = (targetId: number, potentialParentId: number): boolean => {
+          if (targetId === potentialParentId) return true;
+          const parents = db.prepare("SELECT parent_type_id FROM type_hierarchy WHERE child_type_id = ?").all(potentialParentId) as any[];
+          for (const p of parents) {
+            if (p.parent_type_id === targetId || checkCycle(targetId, p.parent_type_id)) return true;
+          }
+          return false;
+        };
+
+        for (const parentId of allowed_parent_types) {
+          if (checkCycle(type.id, parentId)) {
+            throw new Error(`Circular dependency detected: Type ${parentId} is already a descendant of this type.`);
+          }
+        }
+
+        db.prepare("DELETE FROM type_hierarchy WHERE child_type_id = ?").run(type.id);
         const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
         for (const parentId of allowed_parent_types) {
           insertHierarchy.run(parentId, type.id);
         }
+      } else {
+        db.prepare("DELETE FROM type_hierarchy WHERE child_type_id = ?").run(type.id);
       }
     });
     transaction();
