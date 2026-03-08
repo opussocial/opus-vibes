@@ -13,6 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge } from "./types";
 
 // --- Components ---
@@ -29,7 +30,8 @@ import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
 
 export default function App() {
-  const [view, setView] = useState<"dashboard" | "types" | "roles" | "users" | "relationships" | "profile">("dashboard");
+  const navigate = useNavigate();
+  const location = useLocation();
   const [elements, setElements] = useState<Element[]>([]);
   const [types, setTypes] = useState<ElementType[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -39,24 +41,16 @@ export default function App() {
   const [graph, setGraph] = useState<GraphEdge[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editingElement, setEditingElement] = useState<ElementDetail | null>(null);
-  const [viewingElementSlug, setViewingElementSlug] = useState<string | number | null>(null);
+  const [isFabOpen, setIsFabOpen] = useState(false);
+  
+  // Missing states for creation
+  const [newType, setNewType] = useState<Partial<ElementType>>({ name: "", description: "", properties: [], allowed_parent_types: [] });
+  const [newRole, setNewRole] = useState({ name: "Untitled Role", description: "" });
+  const [newEdge, setNewEdge] = useState<Partial<GraphEdge>>({});
+  const [newRelType, setNewRelType] = useState<Partial<RelationshipType>>({});
+  const [editingElement, setEditingElement] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedType, setSelectedType] = useState<ElementType | null>(null);
-  const [isCreatingType, setIsCreatingType] = useState(false);
-  const [newType, setNewType] = useState({ 
-    name: "Untitled Type", 
-    description: "", 
-    properties: [] as any[],
-    allowed_parent_types: [] as number[]
-  });
-  const [isCreatingRelType, setIsCreatingRelType] = useState(false);
-  const [newRelType, setNewRelType] = useState({ source_type_id: 0, target_type_id: 0, name: "Untitled Relationship" });
-  const [isCreatingEdge, setIsCreatingEdge] = useState(false);
-  const [newEdge, setNewEdge] = useState({ rel_type_id: 0, source_el_id: 0, target_el_id: 0 });
-  const [isFabOpen, setIsFabOpen] = useState(false);
-  const [isCreatingRole, setIsCreatingRole] = useState(false);
-  const [newRole, setNewRole] = useState({ name: "Untitled Role", description: "" });
 
   useEffect(() => {
     const init = async () => {
@@ -73,7 +67,7 @@ export default function App() {
 
   useEffect(() => {
     setIsFabOpen(false);
-  }, [view]);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -82,6 +76,7 @@ export default function App() {
     setTypes([]);
     setRoles([]);
     setUsers([]);
+    navigate("/");
   };
 
   const fetchData = async (userObj?: User) => {
@@ -167,9 +162,9 @@ export default function App() {
       body: JSON.stringify(newRole)
     });
     if (res.ok) {
-      setIsCreatingRole(false);
       setNewRole({ name: "Untitled Role", description: "" });
-      fetchData();
+      await fetchData();
+      navigate("/roles");
     }
   };
 
@@ -186,8 +181,9 @@ export default function App() {
       body: JSON.stringify(newRelType)
     });
     if (res.ok) {
-      setIsCreatingRelType(false);
-      fetchData();
+      setNewRelType({});
+      await fetchData();
+      navigate("/relationships");
     }
   };
 
@@ -203,8 +199,9 @@ export default function App() {
       body: JSON.stringify(newEdge)
     });
     if (res.ok) {
-      setIsCreatingEdge(false);
-      fetchData();
+      setNewEdge({});
+      await fetchData();
+      navigate("/relationships");
     }
   };
 
@@ -233,14 +230,14 @@ export default function App() {
       },
       body: JSON.stringify(newType)
     });
-    setIsCreatingType(false);
     setNewType({ 
       name: "Untitled Type", 
       description: "", 
       properties: [],
       allowed_parent_types: []
     });
-    fetchData();
+    await fetchData();
+    navigate("/types");
   };
 
   const toggleProp = (table: string, label: string) => {
@@ -358,39 +355,39 @@ export default function App() {
           <SidebarItem 
             icon={LayoutDashboard} 
             label="Elements" 
-            active={view === "dashboard"} 
-            onClick={() => setView("dashboard")} 
+            active={location.pathname === "/"} 
+            to="/" 
           />
           <SidebarItem 
             icon={Settings} 
             label="Schema Types" 
-            active={view === "types"} 
-            onClick={() => setView("types")} 
+            active={location.pathname.startsWith("/types")} 
+            to="/types" 
           />
           <SidebarItem 
             icon={Shield} 
             label="Roles" 
-            active={view === "roles"} 
-            onClick={() => setView("roles")} 
+            active={location.pathname.startsWith("/roles")} 
+            to="/roles" 
           />
           <SidebarItem 
             icon={LinkIcon} 
             label="Relationships" 
-            active={view === "relationships"} 
-            onClick={() => setView("relationships")} 
+            active={location.pathname.startsWith("/relationships")} 
+            to="/relationships" 
           />
           <SidebarItem 
             icon={UserIcon} 
             label="My Profile" 
-            active={view === "profile"} 
-            onClick={() => setView("profile")} 
+            active={location.pathname === "/profile"} 
+            to="/profile" 
           />
           {hasPermission("manage_roles") && (
             <SidebarItem 
               icon={Users} 
               label="Users" 
-              active={view === "users"} 
-              onClick={() => setView("users")} 
+              active={location.pathname === "/users"} 
+              to="/users" 
             />
           )}
         </nav>
@@ -398,8 +395,8 @@ export default function App() {
         <div className="mt-auto space-y-6">
           <div className="p-4 bg-zinc-900 rounded-2xl text-white">
             <div className="flex items-center justify-between mb-4">
-              <button 
-                onClick={() => setView("profile")}
+              <Link 
+                to="/profile"
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
               >
                 <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center">
@@ -409,7 +406,7 @@ export default function App() {
                   <p className="text-xs font-bold opacity-50 uppercase">User</p>
                   <p className="text-sm font-bold truncate w-24">{currentUser?.username}</p>
                 </div>
-              </button>
+              </Link>
               <button 
                 onClick={handleLogout}
                 className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
@@ -429,82 +426,97 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-10">
         <AnimatePresence mode="wait">
-          {view === "dashboard" ? (
-            <Dashboard 
-              elements={elements}
-              types={types}
-              getTypePermission={getTypePermission}
-              handleEdit={handleEdit}
-              handleDelete={handleDelete}
-              handleView={(slug) => setViewingElementSlug(slug)}
-              startNewElement={startNewElement}
-            />
-          ) : view === "types" ? (
-            <SchemaTypes 
-              types={types}
-              hasPermission={hasPermission}
-              setIsCreatingType={setIsCreatingType}
-              deleteType={deleteType}
-              isCreatingType={isCreatingType}
-              newType={newType}
-              setNewType={setNewType}
-              handleCreateType={handleCreateType}
-              toggleProp={toggleProp}
-              MODULAR_TABLES={MODULAR_TABLES}
-            />
-          ) : view === "roles" ? (
-            <Roles 
-              roles={roles}
-              allPermissions={allPermissions}
-              hasPermission={hasPermission}
-              updateRoleGlobalPermission={updateRoleGlobalPermission}
-              updateRoleTypePermission={updateRoleTypePermission}
-              isCreatingRole={isCreatingRole}
-              setIsCreatingRole={setIsCreatingRole}
-              newRole={newRole}
-              setNewRole={setNewRole}
-              handleCreateRole={handleCreateRole}
-            />
-          ) : view === "relationships" ? (
-            <Relationships 
-              relTypes={relTypes}
-              graph={graph}
-              elements={elements}
-              types={types}
-              hasPermission={hasPermission}
-              setIsCreatingRelType={setIsCreatingRelType}
-              deleteRelType={deleteRelType}
-              setIsCreatingEdge={setIsCreatingEdge}
-              deleteEdge={deleteEdge}
-              isCreatingRelType={isCreatingRelType}
-              newRelType={newRelType}
-              setNewRelType={setNewRelType}
-              createRelType={createRelType}
-              isCreatingEdge={isCreatingEdge}
-              newEdge={newEdge}
-              setNewEdge={setNewEdge}
-              createEdge={createEdge}
-            />
-          ) : view === "users" ? (
-            <UsersScreen 
-              users={users}
-              roles={roles}
-              currentUser={currentUser}
-              updateUserRole={updateUserRole}
-            />
-          ) : view === "profile" && currentUser ? (
-            <Profile user={currentUser} />
-          ) : (
-            <div />
-          )}
+          <Routes location={location}>
+            <Route path="/" element={
+              <Dashboard 
+                elements={elements}
+                types={types}
+                getTypePermission={getTypePermission}
+                handleDelete={handleDelete}
+              />
+            } />
+            <Route path="/elements/new" element={
+              <ElementEditor 
+                types={types}
+                elements={elements}
+                handleSave={handleSave}
+                getTypePermission={getTypePermission}
+                fetchData={fetchData}
+              />
+            } />
+            <Route path="/elements/:slug" element={
+              <ElementView currentUser={currentUser} />
+            } />
+            <Route path="/elements/:slug/edit" element={
+              <ElementEditor 
+                types={types}
+                elements={elements}
+                handleSave={handleSave}
+                getTypePermission={getTypePermission}
+                fetchData={fetchData}
+              />
+            } />
+            <Route path="/types/*" element={
+              <SchemaTypes 
+                types={types}
+                hasPermission={hasPermission}
+                deleteType={deleteType}
+                newType={newType}
+                setNewType={setNewType}
+                handleCreateType={handleCreateType}
+                toggleProp={toggleProp}
+                MODULAR_TABLES={MODULAR_TABLES}
+              />
+            } />
+            <Route path="/roles/*" element={
+              <Roles 
+                roles={roles}
+                allPermissions={allPermissions}
+                hasPermission={hasPermission}
+                updateRoleGlobalPermission={updateRoleGlobalPermission}
+                updateRoleTypePermission={updateRoleTypePermission}
+                newRole={newRole}
+                setNewRole={setNewRole}
+                handleCreateRole={handleCreateRole}
+              />
+            } />
+            <Route path="/relationships/*" element={
+              <Relationships 
+                relTypes={relTypes}
+                graph={graph}
+                elements={elements}
+                types={types}
+                hasPermission={hasPermission}
+                deleteRelType={deleteRelType}
+                deleteEdge={deleteEdge}
+                newRelType={newRelType}
+                setNewRelType={setNewRelType}
+                createRelType={createRelType}
+                newEdge={newEdge}
+                setNewEdge={setNewEdge}
+                createEdge={createEdge}
+              />
+            } />
+            <Route path="/users" element={
+              <UsersScreen 
+                users={users}
+                roles={roles}
+                currentUser={currentUser}
+                updateUserRole={updateUserRole}
+              />
+            } />
+            <Route path="/profile" element={
+              <Profile user={currentUser} />
+            } />
+          </Routes>
         </AnimatePresence>
       </main>
 
       {/* FAB Button */}
-      {["dashboard", "types", "relationships", "roles"].includes(view) && (
+      {["/", "/types", "/relationships", "/roles"].some(path => location.pathname === path) && (
         <div className="fixed bottom-8 right-8 z-40">
           <AnimatePresence>
-            {view === "dashboard" && isFabOpen && (
+            {location.pathname === "/" && isFabOpen && (
               <motion.div
                 initial={{ opacity: 0, y: 10, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -512,16 +524,16 @@ export default function App() {
                 className="absolute bottom-16 right-0 bg-white border border-zinc-200 rounded-2xl shadow-2xl py-3 w-56 overflow-hidden"
               >
                 <div className="px-4 py-2 border-b border-zinc-100 mb-2">
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Add Root Element</p>
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Select Type</p>
                 </div>
-                {types.filter(t => !t.allowed_parent_types || t.allowed_parent_types.length === 0).map(t => {
+                {types.map(t => {
                   const perm = getTypePermission(t.id);
                   if (!perm.can_create) return null;
                   return (
                     <button
                       key={t.id}
                       onClick={() => {
-                        startNewElement(t);
+                        navigate(`/elements/new?type=${t.slug}`);
                         setIsFabOpen(false);
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
@@ -537,14 +549,14 @@ export default function App() {
 
           <button
             onClick={() => {
-              if (view === "dashboard") {
+              if (location.pathname === "/") {
                 setIsFabOpen(!isFabOpen);
-              } else if (view === "types") {
-                setIsCreatingType(true);
-              } else if (view === "relationships") {
-                setIsCreatingRelType(true);
-              } else if (view === "roles") {
-                setIsCreatingRole(true);
+              } else if (location.pathname === "/types") {
+                navigate("/types/new");
+              } else if (location.pathname === "/relationships") {
+                navigate("/relationships/type/new");
+              } else if (location.pathname === "/roles") {
+                navigate("/roles/new");
               }
             }}
             className="w-14 h-14 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group"
@@ -552,37 +564,11 @@ export default function App() {
             <Plus size={24} className={`transition-transform duration-300 ${isFabOpen ? 'rotate-45' : ''}`} />
             
             <div className="absolute right-full mr-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest">
-              {view === "dashboard" ? "Add Element" : view === "types" ? "Add Schema Type" : view === "relationships" ? "Add Relationship" : view === "roles" ? "Add Role" : "Quick Add"}
+              {location.pathname === "/" ? "Add Element" : location.pathname === "/types" ? "Add Schema Type" : location.pathname === "/relationships" ? "Add Relationship" : location.pathname === "/roles" ? "Add Role" : "Quick Add"}
             </div>
           </button>
         </div>
       )}
-
-      {/* Editor Modal */}
-      <AnimatePresence>
-        {editingElement && (
-          <ElementEditor 
-            editingElement={editingElement}
-            setEditingElement={setEditingElement}
-            isCreating={isCreating}
-            types={types}
-            elements={elements}
-            handleSave={handleSave}
-            getTypePermission={getTypePermission}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* View Modal */}
-      <AnimatePresence>
-        {viewingElementSlug && currentUser && (
-          <ElementView 
-            elementIdOrSlug={viewingElementSlug}
-            currentUser={currentUser}
-            onClose={() => setViewingElementSlug(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

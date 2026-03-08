@@ -1,16 +1,17 @@
 import React from "react";
 import { LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface SidebarItemProps {
   icon: LucideIcon;
   label: string;
   active: boolean;
-  onClick: () => void;
+  to: string;
 }
 
-export const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) => (
-  <button
-    onClick={onClick}
+export const SidebarItem = ({ icon: Icon, label, active, to }: SidebarItemProps) => (
+  <Link
+    to={to}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
       active 
         ? "bg-black text-white shadow-md" 
@@ -19,5 +20,5 @@ export const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemP
   >
     <Icon size={20} />
     <span className="font-medium">{label}</span>
-  </button>
+  </Link>
 );

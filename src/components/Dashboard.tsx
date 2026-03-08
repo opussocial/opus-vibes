@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { Search, FileText, Package, MapPin, Database, Edit3, Eye, Trash2, ChevronRight, ChevronDown, Plus } from "lucide-react";
 import { Element, ElementType, TypePermission } from "../types";
 import { Badge } from "./common/Badge";
@@ -8,10 +9,7 @@ interface DashboardProps {
   elements: Element[];
   types: ElementType[];
   getTypePermission: (typeId: number) => TypePermission;
-  handleEdit: (slug: string) => void;
   handleDelete: (slug: string) => void;
-  handleView: (slug: string) => void;
-  startNewElement: (type: ElementType, parentId?: number) => void;
 }
 
 interface ElementRowProps {
@@ -19,10 +17,7 @@ interface ElementRowProps {
   allElements: Element[];
   types: ElementType[];
   getTypePermission: (typeId: number) => TypePermission;
-  handleEdit: (slug: string) => void;
   handleDelete: (slug: string) => void;
-  handleView: (slug: string) => void;
-  startNewElement: (type: ElementType, parentId?: number) => void;
   depth?: number;
 }
 
@@ -31,12 +26,10 @@ const ElementRow: React.FC<ElementRowProps> = ({
   allElements, 
   types, 
   getTypePermission, 
-  handleEdit, 
   handleDelete, 
-  handleView,
-  startNewElement,
   depth = 0 
 }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
   const children = allElements.filter(child => child.parent_id === el.id);
   const perm = getTypePermission(el.type_id);
@@ -97,7 +90,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
                 {allowedChildTypes.map(t => (
                   <button
                     key={t.id}
-                    onClick={() => startNewElement(t, el.id)}
+                    onClick={() => navigate(`/elements/new?type=${t.slug}&parent=${el.id}`)}
                     className="w-full text-left px-4 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black"
                   >
                     New {t.name}
@@ -109,7 +102,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
 
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
-              onClick={() => handleView(el.slug)}
+              onClick={() => navigate(`/elements/${el.slug}`)}
               className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
               title="View Details"
             >
@@ -117,7 +110,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
             </button>
             {perm.can_edit && (
               <button 
-                onClick={() => handleEdit(el.slug)}
+                onClick={() => navigate(`/elements/${el.slug}/edit`)}
                 className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-600 transition-colors"
                 title="Edit"
               >
@@ -152,10 +145,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
                 allElements={allElements} 
                 types={types}
                 getTypePermission={getTypePermission}
-                handleEdit={handleEdit}
                 handleDelete={handleDelete}
-                handleView={handleView}
-                startNewElement={startNewElement}
                 depth={depth + 1}
               />
             ))}
@@ -170,10 +160,7 @@ export const Dashboard = ({
   elements, 
   types,
   getTypePermission, 
-  handleEdit, 
-  handleDelete, 
-  handleView,
-  startNewElement
+  handleDelete
 }: DashboardProps) => {
   const rootElements = elements.filter(el => !el.parent_id);
 
@@ -211,10 +198,7 @@ export const Dashboard = ({
               allElements={elements} 
               types={types}
               getTypePermission={getTypePermission}
-              handleEdit={handleEdit}
               handleDelete={handleDelete}
-              handleView={handleView}
-              startNewElement={startNewElement}
             />
           ))
         ) : (
