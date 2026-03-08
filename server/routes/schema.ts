@@ -62,18 +62,29 @@ router.put("/types/:idOrSlug", requirePermission("manage_types"), (req, res) => 
     if (!type) return res.status(404).json({ error: "Type not found" });
 
     const elementCount = db.prepare("SELECT COUNT(*) as count FROM elements WHERE type_id = ?").get(type.id) as { count: number };
-    if (elementCount.count > 0) {
-      return res.status(400).json({ error: "Cannot edit schema type because elements of this type already exist." });
+    const hasElements = elementCount.count > 0;
+
+    if (hasElements) {
+      // If elements exist, check if properties are being changed
+      const currentProps = db.prepare("SELECT table_name, label FROM properties WHERE type_id = ?").all(type.id) as any[];
+      const propsChanged = properties.length !== currentProps.length || 
+        properties.some((p: any) => !currentProps.find(cp => cp.table_name === p.table_name));
+      
+      if (propsChanged) {
+        return res.status(400).json({ error: "Cannot change modular properties because elements of this type already exist." });
+      }
     }
 
     const transaction = db.transaction(() => {
       db.prepare("UPDATE element_types SET name = ?, slug = ?, description = ? WHERE id = ?").run(name, slugify(name), description, type.id);
       
-      // Update properties
-      db.prepare("DELETE FROM properties WHERE type_id = ?").run(type.id);
-      const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
-      for (const prop of properties) {
-        insertProp.run(type.id, prop.table_name, prop.label);
+      // Update properties - only if they haven't changed or if no elements exist
+      if (!hasElements) {
+        db.prepare("DELETE FROM properties WHERE type_id = ?").run(type.id);
+        const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
+        for (const prop of properties) {
+          insertProp.run(type.id, prop.table_name, prop.label);
+        }
       }
 
       // Update hierarchy

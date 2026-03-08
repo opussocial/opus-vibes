@@ -191,13 +191,13 @@ const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleP
       toggleProp={toggleProp}
       MODULAR_TABLES={MODULAR_TABLES}
       navigate={navigate}
-      disabled={hasElements}
-      warning={hasElements ? "This schema type cannot be edited because elements of this type already exist." : null}
+      disabledProps={hasElements}
+      warning={hasElements ? "Modular properties cannot be changed because elements of this type already exist. However, you can still update the name, description, and hierarchy." : null}
     />
   );
 };
 
-const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, toggleProp, MODULAR_TABLES, navigate, disabled, warning }: any) => {
+const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, toggleProp, MODULAR_TABLES, navigate, disabledProps, warning }: any) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -221,7 +221,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
         </div>
       )}
 
-      <form onSubmit={onSubmit} className={`p-8 space-y-8 ${disabled ? "opacity-60 pointer-events-none" : ""}`}>
+      <form onSubmit={onSubmit} className="p-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div>
@@ -248,7 +248,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className={`space-y-6 ${disabledProps ? "opacity-50 pointer-events-none" : ""}`}>
             <div>
               <label className="block text-sm font-bold text-zinc-900 mb-4">Modular Properties</label>
               <div className="grid grid-cols-1 gap-3">

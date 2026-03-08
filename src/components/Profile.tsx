@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Shield, Mail, User as UserIcon, MapPin, FileText, Save, Loader2 } from "lucide-react";
+import { Shield, Mail, User as UserIcon, MapPin, FileText, Save, Loader2, ExternalLink } from "lucide-react";
 import { User, ElementDetail } from "../types";
 import { Badge } from "./common/Badge";
+import { Link } from "react-router-dom";
 
 interface ProfileProps {
   user: User;
@@ -148,9 +149,17 @@ export const Profile = ({ user }: ProfileProps) => {
         <div className="lg:col-span-2">
           {profile ? (
             <form onSubmit={handleSave} className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-zinc-100 bg-zinc-50/50">
-                <h3 className="text-xl font-bold">Personal Information</h3>
-                <p className="text-sm text-zinc-500">This information is stored as a Profile element.</p>
+              <div className="p-8 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">Personal Information</h3>
+                  <p className="text-sm text-zinc-500">This information is stored as a Profile element.</p>
+                </div>
+                <Link 
+                  to={`/elements/${profile.slug}`}
+                  className="flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-black transition-colors"
+                >
+                  View as Element <ExternalLink size={14} />
+                </Link>
               </div>
               
               <div className="p-8 space-y-6">

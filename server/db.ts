@@ -279,6 +279,24 @@ export function initDb() {
     db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time, duration) VALUES (?, ?, ?, ?)").run(eventId, "2024-12-01 18:00:00", "2024-12-01 22:00:00", 240);
   }
 
+  // Ensure Profile type exists
+  let profileType = db.prepare("SELECT id FROM element_types WHERE slug = 'profile'").get() as any;
+  if (!profileType) {
+    const typeId = db.prepare("INSERT INTO element_types (name, slug, description) VALUES (?, ?, ?)").run("Profile", "profile", "User personal information and settings").lastInsertRowid;
+    db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)").run(typeId, "content", "Bio");
+    db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)").run(typeId, "place", "Location");
+    db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)").run(typeId, "file", "Avatar");
+    
+    // Grant permissions to all roles for the new type
+    const roles = db.prepare("SELECT id, name FROM roles").all() as any[];
+    for (const role of roles) {
+      const canEdit = role.name !== "Viewer" ? 1 : 0;
+      const canCreate = role.name === "Super Admin" ? 1 : 0;
+      db.prepare("INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete) VALUES (?, ?, 1, ?, ?, 0)")
+        .run(role.id, typeId, canCreate, canEdit);
+    }
+  }
+
   // Ensure at least one admin exists
   const adminCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Super Admin'").get() as { count: number };
   if (adminCount.count === 0) {
