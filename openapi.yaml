@@ -180,6 +180,20 @@ paths:
       responses:
         200:
           description: List of types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    name: { type: string }
+                    slug: { type: string }
+                    description: { type: string }
+                    properties: { type: array, items: { type: object } }
+                    allowed_parent_types: { type: array, items: { type: integer } }
+                    element_count: { type: integer }
     post:
       summary: Create a new element type (Admin only)
       tags: [Schema]
@@ -191,6 +205,7 @@ paths:
               properties:
                 name: { type: string }
                 description: { type: string }
+                allowed_parent_types: { type: array, items: { type: integer } }
                 properties:
                   type: array
                   items:
@@ -201,15 +216,42 @@ paths:
       responses:
         200:
           description: Type created
-  /types/{id}:
+  /types/{idOrSlug}:
+    put:
+      summary: Update an element type (Admin only)
+      tags: [Schema]
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                allowed_parent_types: { type: array, items: { type: integer } }
+                properties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      table_name: { type: string }
+                      label: { type: string }
+      responses:
+        200:
+          description: Type updated
     delete:
       summary: Delete an element type (Admin only)
       tags: [Schema]
       parameters:
-        - name: id
+        - name: idOrSlug
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       responses:
         200:
           description: Type deleted
@@ -236,15 +278,15 @@ paths:
       responses:
         200:
           description: Element created
-  /elements/{id}:
+  /elements/{idOrSlug}:
     get:
       summary: Get a single element with modular data
       tags: [Elements]
       parameters:
-        - name: id
+        - name: idOrSlug
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       responses:
         200:
           description: Element data
@@ -252,10 +294,10 @@ paths:
       summary: Update an element
       tags: [Elements]
       parameters:
-        - name: id
+        - name: idOrSlug
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       requestBody:
         content:
           application/json:
@@ -272,22 +314,58 @@ paths:
       summary: Delete an element
       tags: [Elements]
       parameters:
-        - name: id
+        - name: idOrSlug
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       responses:
         200:
           description: Element deleted
-  /elements/{id}/interactions:
+  /elements/{idOrSlug}/children:
+    get:
+      summary: Get child elements
+      tags: [Elements]
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: List of child elements
+  /elements/{idOrSlug}/parent:
+    get:
+      summary: Get parent element
+      tags: [Elements]
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Parent element data
+  /elements/{idOrSlug}/graph:
+    get:
+      summary: Get graph relationships for an element
+      tags: [Elements]
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: List of graph edges
+  /elements/{idOrSlug}/interactions:
     get:
       summary: Get interactions for an element
       tags: [Interactions]
       parameters:
-        - name: id
+        - name: idOrSlug
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       responses:
         200:
           description: List of interactions
@@ -295,10 +373,10 @@ paths:
       summary: Create an interaction (like, favorite, comment)
       tags: [Interactions]
       parameters:
-        - name: id
+        - name: idOrSlug
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       requestBody:
         content:
           application/json:

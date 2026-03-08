@@ -145,6 +145,66 @@
 					"response": []
 				},
 				{
+					"name": "Get Element Children",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/elements/1/children",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"elements",
+								"1",
+								"children"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Element Parent",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/elements/1/parent",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"elements",
+								"1",
+								"parent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Element Graph",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/elements/1/graph",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"elements",
+								"1",
+								"graph"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create Element",
 					"request": {
 						"method": "POST",
@@ -189,6 +249,61 @@
 							"path": [
 								"api",
 								"types"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Type",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New Type\",\n    \"description\": \"A new element type\",\n    \"allowed_parent_types\": [],\n    \"properties\": [\n        {\n            \"table_name\": \"content\",\n            \"label\": \"Body\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/types",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"types"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Type",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Type\",\n    \"description\": \"Updated description\",\n    \"allowed_parent_types\": [1],\n    \"properties\": [\n        {\n            \"table_name\": \"content\",\n            \"label\": \"Body\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/types/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"types",
+								"1"
 							]
 						}
 					},
