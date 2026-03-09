@@ -307,6 +307,7 @@ export default function App() {
       name: editingElement.name,
       type_id: editingElement.type_id,
       parent_id: editingElement.parent_id,
+      status: editingElement.status,
       modular_data: {} as any
     };
 

@@ -75,9 +75,12 @@ const ElementRow: React.FC<ElementRowProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base text-marine">{el.name}</h3>
-              <Badge color={el.type_name === "Article" ? "blue" : el.type_name === "Product" ? "green" : "purple"}>
+              <Badge color="zinc">
                 {el.type_name}
               </Badge>
+              {el.status && (
+                <Badge color="blue">{el.status}</Badge>
+              )}
             </div>
             <p className="text-[10px] text-zinc-400 mt-0.5">
               Slug: {el.slug}

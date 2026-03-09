@@ -41,10 +41,6 @@ export class SchemaService implements ISchemaService {
         }
       }
 
-      const adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
-      if (adminRole) {
-        db.prepare("INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete) VALUES (?, ?, 1, 1, 1, 1)").run(adminRole.id, typeId);
-      }
       return typeId;
     });
     

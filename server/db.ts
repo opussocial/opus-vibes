@@ -179,6 +179,15 @@ export function initDb() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (type_id) REFERENCES interaction_types(id) ON DELETE CASCADE
     );
+
+    -- Trigger to automatically add default permissions for all roles when a new type is created
+    CREATE TRIGGER IF NOT EXISTS after_type_insert
+    AFTER INSERT ON element_types
+    BEGIN
+      INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete)
+      SELECT id, NEW.id, 1, (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END), (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END), (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END)
+      FROM roles;
+    END;
   `);
 
   // Migrations

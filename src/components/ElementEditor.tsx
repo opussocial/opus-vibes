@@ -129,8 +129,8 @@ export const ElementEditor = ({
         {/* Base Info */}
         <section className="space-y-4">
           <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Base Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-medium text-zinc-700 mb-1.5">Element Name</label>
               <input 
                 type="text" 
@@ -142,6 +142,7 @@ export const ElementEditor = ({
                 placeholder="e.g. Summer Collection 2024"
               />
             </div>
+            
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1.5">Parent Element</label>
               <select 
@@ -169,6 +170,23 @@ export const ElementEditor = ({
                 </p>
               ) : null}
             </div>
+
+            {types.find(t => t.id === editingElement.type_id)?.statuses?.length ? (
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1.5">Status</label>
+                <select 
+                  disabled={!canEdit}
+                  value={editingElement.status || ""}
+                  onChange={e => setEditingElement({ ...editingElement, status: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all text-lg font-medium disabled:opacity-50"
+                >
+                  <option value="">Select Status...</option>
+                  {types.find(t => t.id === editingElement.type_id)?.statuses?.map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
         </section>
 

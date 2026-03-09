@@ -1,6 +1,6 @@
 import React from "react";
 
-export const Badge = ({ children, color = "zinc" }: { children: React.ReactNode, color?: string }) => {
+export const Badge = ({ children, color = "zinc" }: { children: React.ReactNode, color?: string, [key: string]: any }) => {
   const colors: any = {
     zinc: "bg-zinc-100 text-zinc-600",
     blue: "bg-blue-100 text-blue-600",

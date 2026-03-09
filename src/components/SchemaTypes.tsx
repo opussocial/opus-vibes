@@ -161,6 +161,19 @@ export const SchemaTypes = ({
                         <span className="ml-auto text-[10px] text-zinc-400 font-mono uppercase">{p.table_name}</span>
                       </div>
                     ))}
+                    {type.statuses && type.statuses.length > 0 && (
+                      <div className="pt-4 mt-4 border-t border-zinc-50">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Clock size={10} />
+                          Allowed Statuses
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {type.statuses.map(status => (
+                            <Badge key={status} color="blue">{status}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {type.allowed_parent_types && type.allowed_parent_types.length > 0 && (
                       <div className="pt-4 mt-4 border-t border-zinc-50">
                         <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
@@ -252,10 +265,26 @@ const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleP
 const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, toggleProp, wouldCreateCycle, MODULAR_TABLES, navigate, disabledProps, warning }: any) => {
   const [iconSearch, setIconSearch] = useState("");
   const [showIconList, setShowIconList] = useState(false);
+  const [newStatus, setNewStatus] = useState("");
 
   const filteredIcons = COMMON_ICONS.filter(icon => 
     icon.toLowerCase().includes(iconSearch.toLowerCase())
   );
+
+  const addStatus = () => {
+    if (!newStatus.trim()) return;
+    const statuses = newType.statuses || [];
+    if (statuses.includes(newStatus.trim())) return;
+    setNewType({ ...newType, statuses: [...statuses, newStatus.trim()] });
+    setNewStatus("");
+  };
+
+  const removeStatus = (status: string) => {
+    setNewType({ 
+      ...newType, 
+      statuses: (newType.statuses || []).filter((s: string) => s !== status) 
+    });
+  };
 
   return (
     <motion.div
@@ -382,6 +411,47 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
                 className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"
                 placeholder="Describe what this type represents..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-zinc-900 mb-2 flex items-center gap-2">
+                <Clock size={14} className="text-zinc-400" />
+                Allowed Statuses (State Machine)
+              </label>
+              <div className="flex gap-2 mb-3">
+                <input 
+                  type="text" 
+                  value={newStatus}
+                  onChange={e => setNewStatus(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addStatus())}
+                  className="flex-1 px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                  placeholder="e.g. Draft, Published..."
+                />
+                <button 
+                  type="button"
+                  onClick={addStatus}
+                  className="px-4 py-2 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-all"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(newType.statuses || []).map((status: string) => (
+                  <div key={status} className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-xs font-bold border border-blue-100">
+                    {status}
+                    <button 
+                      type="button"
+                      onClick={() => removeStatus(status)}
+                      className="hover:text-blue-800"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+                {(newType.statuses || []).length === 0 && (
+                  <p className="text-xs text-zinc-400 italic">No statuses defined. Elements will have no status field.</p>
+                )}
+              </div>
             </div>
           </div>
 

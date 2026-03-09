@@ -125,6 +125,9 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
               <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 rounded text-[10px] font-bold uppercase tracking-wider">
                 {element.type_name}
               </span>
+              {element.status && (
+                <Badge color="blue">{element.status}</Badge>
+              )}
               <span className="text-[10px] text-zinc-400 flex items-center gap-1">
                 <Clock size={10} />
                 Updated {new Date(element.updated_at).toLocaleDateString()}
