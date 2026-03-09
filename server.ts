@@ -15,6 +15,8 @@ import schemaRoutes from "./server/routes/schema";
 import elementRoutes from "./server/routes/elements";
 import interactionRoutes from "./server/routes/interactions";
 import adminRoutes from "./server/routes/admin";
+import taskRoutes from "./server/routes/tasks";
+import { queueService } from "./server/services";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +43,7 @@ async function startServer() {
   app.use("/api", elementRoutes);
   app.use("/api", interactionRoutes);
   app.use("/api", adminRoutes);
+  app.use("/api", taskRoutes);
 
   // Get current user info
   app.get("/api/me", (req: any, res) => {
@@ -64,7 +67,39 @@ async function startServer() {
   const PORT = 3000;
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    startWorker();
   });
+}
+
+async function startWorker() {
+  console.log("Starting background worker...");
+  while (true) {
+    try {
+      const task = await queueService.pickNextTask();
+      if (task) {
+        console.log(`Processing task ${task.id} (${task.type})...`);
+        
+        // Simulate processing
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Logic for different task types
+        if (task.type === "demo_task") {
+          console.log("Demo task payload:", task.payload);
+        }
+        
+        await queueService.completeTask(task.id);
+        console.log(`Task ${task.id} completed.`);
+      } else {
+        // Wait before checking again if no tasks
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    } catch (err: any) {
+      console.error("Worker error:", err);
+      // If we have a current task, we should probably fail it
+      // But in this simple loop we don't have the ID easily if pickNextTask failed
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
 }
 
 startServer();

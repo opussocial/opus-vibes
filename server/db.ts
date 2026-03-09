@@ -180,6 +180,20 @@ export function initDb() {
       FOREIGN KEY (type_id) REFERENCES interaction_types(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      payload TEXT, -- JSON
+      status TEXT DEFAULT 'pending', -- pending, processing, completed, failed
+      priority INTEGER DEFAULT 0,
+      attempts INTEGER DEFAULT 0,
+      max_attempts INTEGER DEFAULT 3,
+      error TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      started_at DATETIME,
+      completed_at DATETIME
+    );
+
     -- Trigger to automatically add default permissions for all roles when a new type is created
     CREATE TRIGGER IF NOT EXISTS after_type_insert
     AFTER INSERT ON element_types

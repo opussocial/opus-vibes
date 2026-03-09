@@ -11,6 +11,7 @@ import {
   Users,
   User as UserIcon,
   LogOut,
+  Activity,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
@@ -28,6 +29,7 @@ import { Relationships } from "./components/Relationships";
 import { ElementEditor } from "./components/ElementEditor";
 import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
+import { TaskMonitor } from "./components/TaskMonitor";
 
 export default function App() {
   const navigate = useNavigate();
@@ -418,6 +420,14 @@ export default function App() {
           />
           {hasPermission("manage_roles") && (
             <SidebarItem 
+              icon={Activity} 
+              label="Tasks" 
+              active={location.pathname === "/tasks"} 
+              to="/tasks" 
+            />
+          )}
+          {hasPermission("manage_roles") && (
+            <SidebarItem 
               icon={Users} 
               label="Users" 
               active={location.pathname === "/users"} 
@@ -547,6 +557,7 @@ export default function App() {
             <Route path="/profile" element={
               <Profile user={currentUser} />
             } />
+            <Route path="/tasks" element={<TaskMonitor />} />
           </Routes>
         </AnimatePresence>
       </main>
