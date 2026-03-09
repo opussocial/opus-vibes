@@ -54,12 +54,7 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      const res = await fetch("/api/me");
-      const user = await res.json();
-      if (user) {
-        setCurrentUser(user);
-        fetchData(user);
-      }
+      await fetchData();
       setLoading(false);
     };
     init();
@@ -79,18 +74,21 @@ export default function App() {
     navigate("/");
   };
 
-  const fetchData = async (userObj?: User) => {
-    const user = userObj || currentUser;
-    if (!user) return;
-
-    setLoading(true);
+  const fetchData = async () => {
     try {
-      const [eRes, tRes, rtRes, gRes] = await Promise.all([
+      const [meRes, eRes, tRes, rtRes, gRes] = await Promise.all([
+        fetch("/api/me"),
         fetch("/api/elements"),
         fetch("/api/types"),
         fetch("/api/relationship-types"),
         fetch("/api/graph")
       ]);
+      
+      const user = await meRes.json();
+      setCurrentUser(user);
+      
+      if (!user) return;
+
       setElements(await eRes.json());
       setTypes(await tRes.json());
       setRelTypes(await rtRes.json());
@@ -108,8 +106,6 @@ export default function App() {
       }
     } catch (err) {
       console.error("Failed to fetch data", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -367,9 +363,8 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <AuthScreen onLogin={(user) => {
-      setCurrentUser(user);
-      fetchData(user);
+    return <AuthScreen onLogin={() => {
+      fetchData();
     }} />;
   }
 
