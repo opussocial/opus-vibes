@@ -50,8 +50,8 @@ const ElementRow: React.FC<ElementRowProps> = ({
     <div className="flex flex-col">
       <motion.div
         layoutId={`el-${el.id}`}
-        className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between group"
-        style={{ marginLeft: `${depth * 24}px` }}
+        className="bg-white p-3 md:p-4 rounded-2xl border border-zinc-200 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between group gap-4"
+        style={{ marginLeft: `${depth * (window.innerWidth < 768 ? 12 : 24)}px` }}
       >
         <div className="flex items-center gap-4 flex-1">
           <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           {/* Add Child Dropdown */}
           {allowedChildTypes.length > 0 && perm.can_create && (
             <div className="relative">
@@ -136,7 +136,7 @@ const ElementRow: React.FC<ElementRowProps> = ({
             </div>
           )}
 
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity justify-end">
             <button 
               onClick={() => navigate(`/elements/${el.slug}`)}
               className="p-2 hover:bg-marine/5 rounded-lg text-marine/60 hover:text-marine transition-colors"
@@ -208,18 +208,18 @@ export const Dashboard = ({
       exit={{ opacity: 0, y: -10 }}
       className="max-w-5xl mx-auto"
     >
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-marine">Catalog Elements</h2>
-          <p className="text-zinc-500 mt-1">Manage all your modular content elements here.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-marine">Catalog Elements</h2>
+          <p className="text-zinc-500 mt-1 text-sm md:text-base">Manage all your modular content elements here.</p>
         </div>
         <div className="flex gap-3">
-          <div className="relative">
+          <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input 
               type="text" 
               placeholder="Search elements..." 
-              className="pl-10 pr-4 py-2 bg-white border border-zinc-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/10 transition-all w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-zinc-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/10 transition-all w-full"
             />
           </div>
         </div>

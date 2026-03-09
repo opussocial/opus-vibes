@@ -83,20 +83,11 @@ export const SchemaTypes = ({
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight">Schema Types</h2>
-                <p className="text-zinc-500 mt-1">Define the structure of your elements and their modular properties.</p>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Schema Types</h2>
+                <p className="text-zinc-500 mt-1 text-sm md:text-base">Define the structure of your elements and their modular properties.</p>
               </div>
-              {hasPermission("manage_types") && (
-                <button 
-                  onClick={() => navigate("/types/new")}
-                  className="flex items-center gap-2 bg-marine text-brand-yellow px-5 py-2.5 rounded-xl font-bold hover:bg-marine-light transition-all shadow-lg"
-                >
-                  <Plus size={20} />
-                  Create Type
-                </button>
-              )}
             </div>
 
             {!hasPermission("manage_types") && (

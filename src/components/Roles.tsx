@@ -38,20 +38,11 @@ export const Roles = ({
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight">Roles & Permissions</h2>
-                <p className="text-zinc-500 mt-1">Configure system-wide roles and granular type permissions.</p>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Roles & Permissions</h2>
+                <p className="text-zinc-500 mt-1 text-sm md:text-base">Configure system-wide roles and granular type permissions.</p>
               </div>
-              {hasPermission("manage_roles") && (
-                <button 
-                  onClick={() => navigate("/roles/new")}
-                  className="flex items-center gap-2 bg-marine text-brand-yellow px-5 py-2.5 rounded-xl font-bold hover:bg-marine-light transition-all shadow-lg"
-                >
-                  <Plus size={20} />
-                  Create Role
-                </button>
-              )}
             </div>
 
             {!hasPermission("manage_roles") && (
@@ -75,7 +66,7 @@ export const Roles = ({
                     <p className="text-zinc-500">{role.description}</p>
                   </div>
 
-                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div>
                       <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Global Permissions</h4>
                       <div className="space-y-2">

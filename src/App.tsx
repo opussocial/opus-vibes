@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   LogOut,
   Activity,
+  Menu,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
@@ -45,9 +46,17 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Missing states for creation
-  const [newType, setNewType] = useState<Partial<ElementType>>({ name: "", description: "", properties: [], allowed_parent_types: [], color: "#6366f1", icon: "Package" });
+  const [newType, setNewType] = useState<Partial<ElementType>>({ 
+    name: "", 
+    description: "", 
+    properties: [], 
+    allowed_parent_types: [], 
+    color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`, 
+    icon: "Package" 
+  });
   const [newRole, setNewRole] = useState({ name: "Untitled Role", description: "" });
   const [newEdge, setNewEdge] = useState<Partial<GraphEdge>>({});
   const [newRelType, setNewRelType] = useState<Partial<RelationshipType>>({});
@@ -64,6 +73,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    setIsSidebarOpen(false);
     setIsFabOpen(false);
   }, [location.pathname]);
 
@@ -378,9 +388,41 @@ export default function App() {
   const allowedChildTypes = currentElement ? types.filter(t => t.allowed_parent_types?.includes(currentElement.type_id)) : [];
 
   return (
-    <div className="flex h-screen bg-white text-zinc-900 font-sans">
+    <div className="flex flex-col md:flex-row h-screen bg-white text-zinc-900 font-sans overflow-hidden">
+      {/* Mobile Header */}
+      <header className="md:hidden bg-white border-b border-zinc-100 p-4 flex items-center justify-between z-40">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-marine rounded-lg flex items-center justify-center text-brand-yellow">
+            <Database size={18} />
+          </div>
+          <h1 className="text-lg font-bold tracking-tight text-marine">FlexCatalog</h1>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 hover:bg-zinc-50 rounded-lg text-zinc-500"
+        >
+          <Menu size={24} />
+        </button>
+      </header>
+
+      {/* Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-zinc-100 bg-zinc-50/30 p-6 flex flex-col gap-8">
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50 w-64 border-r border-zinc-100 bg-zinc-50/30 p-6 flex flex-col gap-8 transition-transform duration-300 md:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         <div className="flex items-center gap-3 px-2">
           <div className="w-10 h-10 bg-marine rounded-xl flex items-center justify-center text-brand-yellow shadow-lg shadow-marine/20">
             <Database size={24} />
@@ -477,7 +519,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-10">
         <AnimatePresence mode="wait">
           <Routes location={location}>
             <Route path="/" element={

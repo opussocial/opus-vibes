@@ -53,12 +53,12 @@ export const TaskMonitor = () => {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-marine">Task Monitor</h2>
-          <p className="text-zinc-500 mt-1">Monitor asynchronous background processing tasks.</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-marine">Task Monitor</h2>
+          <p className="text-zinc-500 mt-1 text-sm md:text-base">Monitor asynchronous background processing tasks.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button 
             onClick={createDemoTask}
             className="flex items-center gap-2 px-4 py-2 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine/90 transition-all"

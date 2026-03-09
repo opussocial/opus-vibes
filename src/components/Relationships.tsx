@@ -48,10 +48,10 @@ export const Relationships = ({
             animate={{ opacity: 1, y: 0 }}
             className="space-y-12"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight text-marine">Relationships</h2>
-                <p className="text-zinc-500 mt-1">Manage tree hierarchy and graph connections.</p>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-marine">Relationships</h2>
+                <p className="text-zinc-500 mt-1 text-sm md:text-base">Manage graph connections between elements.</p>
               </div>
             </div>
 
@@ -59,14 +59,6 @@ export const Relationships = ({
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-marine">Allowed Graph Relationships</h3>
-                {hasPermission("manage_types") && (
-                  <button 
-                    onClick={() => navigate("/relationships/type/new")}
-                    className="px-4 py-2 bg-marine text-brand-yellow rounded-xl font-bold text-sm hover:bg-marine-light transition-all flex items-center gap-2 shadow-lg"
-                  >
-                    <Plus size={16} /> Define Relationship
-                  </button>
-                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -102,16 +94,10 @@ export const Relationships = ({
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-marine">Graph Connections</h3>
-                <button 
-                  onClick={() => navigate("/relationships/edge/new")}
-                  className="px-4 py-2 bg-marine/5 text-marine rounded-xl font-bold text-sm hover:bg-marine/10 transition-all flex items-center gap-2"
-                >
-                  <Plus size={16} /> Link Elements
-                </button>
               </div>
 
-              <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left">
+              <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-x-auto">
+                <table className="w-full text-left min-w-[600px]">
                   <thead className="bg-zinc-50 border-b border-zinc-100">
                     <tr>
                       <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">Source Element</th>
@@ -142,17 +128,6 @@ export const Relationships = ({
               </div>
             </section>
 
-            {/* Tree Adjacency Visualization */}
-            <section>
-              <h3 className="text-xl font-bold mb-6">Hierarchy (Tree)</h3>
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm">
-                <div className="space-y-4">
-                  {elements.filter(e => !e.parent_id).map(root => (
-                    <TreeNode key={root.id} element={root} allElements={elements} level={0} />
-                  ))}
-                </div>
-              </div>
-            </section>
           </motion.div>
         } />
 

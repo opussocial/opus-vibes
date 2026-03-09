@@ -73,10 +73,10 @@ export const DefinitionManager = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 md:px-0">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold tracking-tight text-marine">App Definition</h2>
-        <p className="text-zinc-500 mt-1">Export or import the entire application structure, including schemas, roles, and relationships.</p>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-marine">App Definition</h2>
+        <p className="text-zinc-500 mt-1 text-sm md:text-base">Export or import the entire application structure, including schemas, roles, and relationships.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
