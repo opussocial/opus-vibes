@@ -1,162 +1,80 @@
 import express from "express";
-import { db } from "../db";
 import { requireAuth, checkTypePermission } from "../middleware";
-import { slugify } from "../utils";
+import { elementService } from "../services";
 
 const router = express.Router();
 
-router.get("/elements", requireAuth, (req: any, res) => {
+router.get("/elements", requireAuth, async (req: any, res) => {
   const user = req.user;
   const allowedTypeIds = user.type_permissions.filter((p: any) => p.can_view).map((p: any) => p.type_id);
-  if (allowedTypeIds.length === 0) return res.json([]);
-
-  const placeholders = allowedTypeIds.map(() => "?").join(",");
-  const elements = db.prepare(`
-    SELECT e.*, t.name as type_name 
-    FROM elements e 
-    JOIN element_types t ON e.type_id = t.id
-    WHERE e.type_id IN (${placeholders})
-    ORDER BY e.updated_at DESC
-  `).all(...allowedTypeIds);
-  res.json(elements);
-});
-
-router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), (req, res) => {
-  const isId = /^\d+$/.test(req.params.id);
-  const element = db.prepare(`
-    SELECT e.*, t.name as type_name 
-    FROM elements e 
-    JOIN element_types t ON e.type_id = t.id
-    WHERE e.${isId ? "id" : "slug"} = ?
-  `).get(req.params.id) as any;
-
-  if (!element) return res.status(404).json({ error: "Element not found" });
-
-  const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(element.type_id) as any[];
-  const data: any = { ...element };
-
-  for (const prop of props) {
-    const tableData = db.prepare(`SELECT * FROM ${prop.table_name} WHERE element_id = ?`).get(element.id);
-    data[prop.table_name] = tableData || {};
-  }
-  res.json(data);
-});
-
-router.get("/elements/:id/children", requireAuth, (req, res) => {
-  const isId = /^\d+$/.test(req.params.id);
-  const element = db.prepare(`SELECT id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(req.params.id) as any;
-  if (!element) return res.status(404).json({ error: "Element not found" });
-
-  const children = db.prepare(`
-    SELECT e.*, t.name as type_name 
-    FROM elements e 
-    JOIN element_types t ON e.type_id = t.id
-    WHERE e.parent_id = ?
-    ORDER BY e.name ASC
-  `).all(element.id);
-  res.json(children);
-});
-
-router.get("/elements/:id/parent", requireAuth, (req, res) => {
-  const isId = /^\d+$/.test(req.params.id);
-  const element = db.prepare(`SELECT parent_id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(req.params.id) as any;
-  if (!element || !element.parent_id) return res.json(null);
-
-  const parent = db.prepare(`
-    SELECT e.*, t.name as type_name 
-    FROM elements e 
-    JOIN element_types t ON e.type_id = t.id
-    WHERE e.id = ?
-  `).get(element.parent_id);
-  res.json(parent);
-});
-
-router.get("/elements/:id/graph", requireAuth, (req, res) => {
-  const isId = /^\d+$/.test(req.params.id);
-  const element = db.prepare(`SELECT id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(req.params.id) as any;
-  if (!element) return res.status(404).json({ error: "Element not found" });
-
-  const edges = db.prepare(`
-    SELECT ge.*, grt.name as rel_name, se.name as source_name, te.name as target_name
-    FROM graph_edges ge
-    JOIN graph_relationship_types grt ON ge.rel_type_id = grt.id
-    JOIN elements se ON ge.source_el_id = se.id
-    JOIN elements te ON ge.target_el_id = te.id
-    WHERE ge.source_el_id = ? OR ge.target_el_id = ?
-  `).all(element.id, element.id);
-  res.json(edges);
-});
-
-router.post("/elements", requireAuth, checkTypePermission("can_create"), (req, res) => {
-  const { name, type_id, parent_id, modular_data } = req.body;
-  const baseSlug = slugify(name);
   try {
-    const transaction = db.transaction(() => {
-      // Ensure unique slug
-      let slug = baseSlug;
-      let counter = 1;
-      while (db.prepare("SELECT id FROM elements WHERE slug = ?").get(slug)) {
-        slug = `${baseSlug}-${counter++}`;
-      }
+    const elements = await elementService.getElements(allowedTypeIds);
+    res.json(elements);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-      const elementId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run(name, slug, type_id, parent_id).lastInsertRowid;
-      const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(type_id) as any[];
-      for (const prop of props) {
-        const table = prop.table_name;
-        const fields = modular_data[table] || {};
-        const keys = Object.keys(fields);
-        if (keys.length > 0) {
-          const columns = ["element_id", ...keys].join(", ");
-          const placeholders = ["?", ...keys.map(() => "?")].join(", ");
-          const values = [elementId, ...keys.map(k => fields[k])];
-          db.prepare(`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`).run(...values);
-        } else {
-          db.prepare(`INSERT INTO ${table} (element_id) VALUES (?)`).run(elementId);
-        }
-      }
-      return elementId;
-    });
-    const id = transaction();
+router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), async (req, res) => {
+  try {
+    const element = await elementService.getElement(req.params.id);
+    if (!element) return res.status(404).json({ error: "Element not found" });
+    res.json(element);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/elements/:id/children", requireAuth, async (req, res) => {
+  try {
+    const children = await elementService.getChildren(req.params.id);
+    res.json(children);
+  } catch (err: any) {
+    res.status(err.message === "Element not found" ? 404 : 500).json({ error: err.message });
+  }
+});
+
+router.get("/elements/:id/parent", requireAuth, async (req, res) => {
+  try {
+    const parent = await elementService.getParent(req.params.id);
+    res.json(parent);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/elements/:id/graph", requireAuth, async (req, res) => {
+  try {
+    const edges = await elementService.getGraph(req.params.id);
+    res.json(edges);
+  } catch (err: any) {
+    res.status(err.message === "Element not found" ? 404 : 500).json({ error: err.message });
+  }
+});
+
+router.post("/elements", requireAuth, checkTypePermission("can_create"), async (req, res) => {
+  const { name, type_id, parent_id, modular_data } = req.body;
+  try {
+    const id = await elementService.createElement({ name, type_id, parent_id, modular_data });
     res.json({ id, name, type_id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), (req, res) => {
+router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), async (req, res) => {
   const { name, parent_id, modular_data } = req.body;
-  const idOrSlug = req.params.id;
-  const isId = /^\d+$/.test(idOrSlug);
   try {
-    const transaction = db.transaction(() => {
-      const element = db.prepare(`SELECT id, type_id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(idOrSlug) as any;
-      if (!element) throw new Error("Element not found");
-      const elementId = element.id;
-
-      db.prepare("UPDATE elements SET name = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(name, parent_id, elementId);
-      const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(element.type_id) as any[];
-      for (const prop of props) {
-        const table = prop.table_name;
-        const fields = modular_data[table] || {};
-        const keys = Object.keys(fields);
-        if (keys.length > 0) {
-          const setClause = keys.map(k => `${k} = ?`).join(", ");
-          const values = [...keys.map(k => fields[k]), elementId];
-          db.prepare(`UPDATE ${table} SET ${setClause} WHERE element_id = ?`).run(...values);
-        }
-      }
-    });
-    transaction();
+    await elementService.updateElement(req.params.id, { name, parent_id, modular_data });
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.delete("/elements/:id", requireAuth, checkTypePermission("can_delete"), (req, res) => {
+router.delete("/elements/:id", requireAuth, checkTypePermission("can_delete"), async (req, res) => {
   try {
-    const isId = /^\d+$/.test(req.params.id);
-    db.prepare(`DELETE FROM elements WHERE ${isId ? "id" : "slug"} = ?`).run(req.params.id);
+    await elementService.deleteElement(req.params.id);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -164,39 +82,42 @@ router.delete("/elements/:id", requireAuth, checkTypePermission("can_delete"), (
 });
 
 // Graph Edges
-router.get("/graph", requireAuth, (req, res) => {
-  const edges = db.prepare(`
-    SELECT ge.*, grt.name as rel_name, se.name as source_name, te.name as target_name
-    FROM graph_edges ge
-    JOIN graph_relationship_types grt ON ge.rel_type_id = grt.id
-    JOIN elements se ON ge.source_el_id = se.id
-    JOIN elements te ON ge.target_el_id = te.id
-  `).all();
-  res.json(edges);
+router.get("/graph", requireAuth, async (req, res) => {
+  try {
+    const edges = await elementService.getAllGraphEdges();
+    res.json(edges);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-router.post("/graph", requireAuth, (req: any, res) => {
+router.post("/graph", requireAuth, async (req: any, res) => {
   const { rel_type_id, source_el_id, target_el_id } = req.body;
-  const se = db.prepare("SELECT type_id FROM elements WHERE id = ?").get(source_el_id) as any;
-  const te = db.prepare("SELECT type_id FROM elements WHERE id = ?").get(target_el_id) as any;
-  if (!se || !te) return res.status(404).json({ error: "Elements not found" });
-  
-  const user = req.user;
-  const sPerm = user.type_permissions.find((p: any) => p.type_id === se.type_id);
-  const tPerm = user.type_permissions.find((p: any) => p.type_id === te.type_id);
-  if (!sPerm?.can_edit || !tPerm?.can_edit) return res.status(403).json({ error: "Permission denied to link these elements" });
-
   try {
-    const result = db.prepare("INSERT INTO graph_edges (rel_type_id, source_el_id, target_el_id) VALUES (?, ?, ?)").run(rel_type_id, source_el_id, target_el_id);
-    res.json({ id: result.lastInsertRowid, rel_type_id, source_el_id, target_el_id });
+    // Permission check still in route for now as it depends on req.user
+    const element = await elementService.getElement(source_el_id.toString());
+    const target = await elementService.getElement(target_el_id.toString());
+    if (!element || !target) return res.status(404).json({ error: "Elements not found" });
+    
+    const user = req.user;
+    const sPerm = user.type_permissions.find((p: any) => p.type_id === element.type_id);
+    const tPerm = user.type_permissions.find((p: any) => p.type_id === target.type_id);
+    if (!sPerm?.can_edit || !tPerm?.can_edit) return res.status(403).json({ error: "Permission denied to link these elements" });
+
+    const id = await elementService.createGraphEdge({ rel_type_id, source_el_id, target_el_id });
+    res.json({ id, rel_type_id, source_el_id, target_el_id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.delete("/graph/:id", requireAuth, (req, res) => {
-  db.prepare("DELETE FROM graph_edges WHERE id = ?").run(req.params.id);
-  res.json({ success: true });
+router.delete("/graph/:id", requireAuth, async (req, res) => {
+  try {
+    await elementService.deleteGraphEdge(parseInt(req.params.id));
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 export default router;
