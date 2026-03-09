@@ -16,6 +16,7 @@ import elementRoutes from "./server/routes/elements";
 import interactionRoutes from "./server/routes/interactions";
 import adminRoutes from "./server/routes/admin";
 import taskRoutes from "./server/routes/tasks";
+import definitionRoutes from "./server/routes/definition";
 import { queueService } from "./server/services";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,6 +45,7 @@ async function startServer() {
   app.use("/api", interactionRoutes);
   app.use("/api", adminRoutes);
   app.use("/api", taskRoutes);
+  app.use("/api/definition", definitionRoutes);
 
   // Get current user info
   app.get("/api/me", (req: any, res) => {

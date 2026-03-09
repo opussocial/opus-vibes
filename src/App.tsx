@@ -30,6 +30,7 @@ import { ElementEditor } from "./components/ElementEditor";
 import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
 import { TaskMonitor } from "./components/TaskMonitor";
+import { DefinitionManager } from "./components/DefinitionManager";
 
 export default function App() {
   const navigate = useNavigate();
@@ -426,6 +427,14 @@ export default function App() {
               to="/tasks" 
             />
           )}
+          {hasPermission("manage_types") && (
+            <SidebarItem 
+              icon={Settings} 
+              label="App Definition" 
+              active={location.pathname === "/definition"} 
+              to="/definition" 
+            />
+          )}
           {hasPermission("manage_roles") && (
             <SidebarItem 
               icon={Users} 
@@ -558,6 +567,7 @@ export default function App() {
               <Profile user={currentUser} />
             } />
             <Route path="/tasks" element={<TaskMonitor />} />
+            <Route path="/definition" element={<DefinitionManager />} />
           </Routes>
         </AnimatePresence>
       </main>
