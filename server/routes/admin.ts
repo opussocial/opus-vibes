@@ -1,6 +1,7 @@
 import express from "express";
 import { requirePermission } from "../middleware";
 import { adminService } from "../services";
+import { validate, updateUserRoleSchema, createRoleSchema, rolePermissionsSchema, roleTypePermissionsSchema } from "../validation";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get("/users", requirePermission("manage_roles"), async (req, res) => {
   }
 });
 
-router.put("/users/:id/role", requirePermission("manage_roles"), async (req, res) => {
+router.put("/users/:id/role", requirePermission("manage_roles"), validate(updateUserRoleSchema), async (req, res) => {
   const { role_id } = req.body;
   try {
     await adminService.updateUserRole(parseInt(req.params.id), role_id);
@@ -41,7 +42,7 @@ router.get("/roles", requirePermission("manage_roles"), async (req, res) => {
   }
 });
 
-router.post("/roles", requirePermission("manage_roles"), async (req, res) => {
+router.post("/roles", requirePermission("manage_roles"), validate(createRoleSchema), async (req, res) => {
   const { name, description } = req.body;
   try {
     const id = await adminService.createRole({ name, description });
@@ -51,7 +52,7 @@ router.post("/roles", requirePermission("manage_roles"), async (req, res) => {
   }
 });
 
-router.put("/roles/:idOrSlug/permissions", requirePermission("manage_roles"), async (req, res) => {
+router.put("/roles/:idOrSlug/permissions", requirePermission("manage_roles"), validate(rolePermissionsSchema), async (req, res) => {
   const { permission_ids } = req.body;
   const { idOrSlug } = req.params;
   try {
@@ -62,7 +63,7 @@ router.put("/roles/:idOrSlug/permissions", requirePermission("manage_roles"), as
   }
 });
 
-router.put("/roles/:idOrSlug/type-permissions/:typeIdOrSlug", requirePermission("manage_roles"), async (req, res) => {
+router.put("/roles/:idOrSlug/type-permissions/:typeIdOrSlug", requirePermission("manage_roles"), validate(roleTypePermissionsSchema), async (req, res) => {
   const { idOrSlug, typeIdOrSlug } = req.params;
   try {
     await adminService.updateRoleTypePermissions(idOrSlug, typeIdOrSlug, req.body);

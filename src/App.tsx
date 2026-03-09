@@ -44,7 +44,7 @@ export default function App() {
   const [isFabOpen, setIsFabOpen] = useState(false);
   
   // Missing states for creation
-  const [newType, setNewType] = useState<Partial<ElementType>>({ name: "", description: "", properties: [], allowed_parent_types: [] });
+  const [newType, setNewType] = useState<Partial<ElementType>>({ name: "", description: "", properties: [], allowed_parent_types: [], color: "#6366f1", icon: "Package" });
   const [newRole, setNewRole] = useState({ name: "Untitled Role", description: "" });
   const [newEdge, setNewEdge] = useState<Partial<GraphEdge>>({});
   const [newRelType, setNewRelType] = useState<Partial<RelationshipType>>({});
@@ -234,7 +234,9 @@ export default function App() {
       name: "Untitled Type", 
       description: "", 
       properties: [],
-      allowed_parent_types: []
+      allowed_parent_types: [],
+      color: "#6366f1",
+      icon: "Package"
     });
     await fetchData();
     navigate("/types");
@@ -259,7 +261,9 @@ export default function App() {
         name: "Untitled Type", 
         description: "", 
         properties: [],
-        allowed_parent_types: []
+        allowed_parent_types: [],
+        color: "#6366f1",
+        icon: "Package"
       });
       await fetchData();
       navigate("/types");

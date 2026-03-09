@@ -3,6 +3,9 @@ export interface ElementType {
   name: string;
   slug: string;
   description: string;
+  statuses?: string[]; // Possible statuses for elements of this type
+  color?: string;
+  icon?: string;
   properties: Property[];
   allowed_parent_types?: number[];
   element_count?: number;
@@ -22,6 +25,7 @@ export interface Element {
   type_name: string;
   name: string;
   slug: string;
+  status?: string;
   created_at: string;
   updated_at: string;
 }

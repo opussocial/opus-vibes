@@ -1,6 +1,7 @@
 import express from "express";
 import { requireAuth } from "../middleware";
 import { interactionService } from "../services";
+import { validate, interactionSchema } from "../validation";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get("/elements/:id/interactions", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/elements/:id/interactions", requireAuth, async (req: any, res) => {
+router.post("/elements/:id/interactions", requireAuth, validate(interactionSchema), async (req: any, res) => {
   const { type_id, content } = req.body;
   try {
     const id = await interactionService.createInteraction(req.params.id, req.user.id, { type_id, content });

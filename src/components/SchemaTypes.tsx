@@ -1,9 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Plus, Lock, Trash2, FileText, MapPin, Link as LinkIcon, Clock, Package, X, Save, Database, Edit2, AlertCircle } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import { 
+  Plus, Lock, Trash2, FileText, MapPin, Link as LinkIcon, Clock, Package, X, Save, 
+  Database, Edit2, AlertCircle, Palette, Search
+} from "lucide-react";
 import { useNavigate, useLocation, Routes, Route, useParams } from "react-router-dom";
 import { ElementType } from "../types";
 import { Badge } from "./common/Badge";
+
+const COMMON_ICONS = [
+  "Package", "FileText", "MapPin", "Link", "Clock", "Database", "User", "Users", 
+  "Settings", "Home", "Search", "Bell", "Mail", "Calendar", "Camera", "Image", 
+  "Video", "Music", "Globe", "Briefcase", "ShoppingCart", "CreditCard", "Tag", 
+  "Bookmark", "Heart", "Star", "MessageSquare", "Share2", "Download", "Upload", 
+  "Trash2", "Edit", "Plus", "Minus", "Check", "X", "Info", "AlertCircle", 
+  "HelpCircle", "Lock", "Unlock"
+];
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface SchemaTypesProps {
   types: ElementType[];
@@ -95,7 +113,15 @@ export const SchemaTypes = ({
               {types.map((type) => (
                 <div key={type.id} className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold">{type.name}</h3>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
+                        style={{ backgroundColor: type.color || "#6366f1" }}
+                      >
+                        <IconRenderer name={type.icon || "Package"} size={20} />
+                      </div>
+                      <h3 className="text-xl font-bold">{type.name}</h3>
+                    </div>
                     <div className="flex gap-2">
                       <Badge color="zinc">{type.properties.length} Props</Badge>
                       {hasPermission("manage_types") && (
@@ -224,6 +250,13 @@ const EditTypeWrapper = ({ types, newType, setNewType, handleUpdateType, toggleP
 };
 
 const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, toggleProp, wouldCreateCycle, MODULAR_TABLES, navigate, disabledProps, warning }: any) => {
+  const [iconSearch, setIconSearch] = useState("");
+  const [showIconList, setShowIconList] = useState(false);
+
+  const filteredIcons = COMMON_ICONS.filter(icon => 
+    icon.toLowerCase().includes(iconSearch.toLowerCase())
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -250,22 +283,100 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
       <form onSubmit={onSubmit} className="p-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-bold text-zinc-900 mb-2">Type Name</label>
-              <input 
-                type="text" 
-                required
-                value={newType.name}
-                onChange={e => setNewType({ ...newType, name: e.target.value })}
-                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                placeholder="e.g. Portfolio Project"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-zinc-900 mb-2">Type Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newType.name}
+                  onChange={e => setNewType({ ...newType, name: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                  placeholder="e.g. Portfolio Project"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-zinc-900 mb-2 flex items-center gap-2">
+                  <Palette size={14} className="text-zinc-400" />
+                  Brand Color
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    type="color" 
+                    value={newType.color || "#6366f1"}
+                    onChange={e => setNewType({ ...newType, color: e.target.value })}
+                    className="w-12 h-12 p-1 bg-zinc-50 border border-zinc-200 rounded-xl cursor-pointer"
+                  />
+                  <input 
+                    type="text" 
+                    value={newType.color || "#6366f1"}
+                    onChange={e => setNewType({ ...newType, color: e.target.value })}
+                    className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all font-mono text-sm uppercase"
+                    placeholder="#000000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <label className="block text-sm font-bold text-zinc-900 mb-2 flex items-center gap-2">
+                <IconRenderer name={newType.icon || "Package"} size={14} className="text-zinc-400" />
+                Type Icon
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
+                  <IconRenderer name={newType.icon || "Package"} size={18} />
+                </div>
+                <input 
+                  type="text" 
+                  value={iconSearch || newType.icon || ""}
+                  onFocus={() => setShowIconList(true)}
+                  onChange={e => {
+                    setIconSearch(e.target.value);
+                    setShowIconList(true);
+                  }}
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                  placeholder="Search icons (e.g. Heart, Star...)"
+                />
+                {showIconList && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowIconList(false)} />
+                    <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-zinc-200 rounded-2xl shadow-2xl z-20 max-h-64 overflow-y-auto p-2 grid grid-cols-4 gap-1">
+                      {filteredIcons.length > 0 ? (
+                        filteredIcons.map(icon => (
+                          <button
+                            key={icon}
+                            type="button"
+                            onClick={() => {
+                              setNewType({ ...newType, icon });
+                              setIconSearch("");
+                              setShowIconList(false);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all gap-2 ${
+                              newType.icon === icon ? "bg-marine text-brand-yellow" : "hover:bg-zinc-50 text-zinc-600"
+                            }`}
+                          >
+                            <IconRenderer name={icon} size={20} />
+                            <span className="text-[8px] font-bold uppercase truncate w-full text-center">{icon}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="col-span-4 py-8 text-center text-zinc-400">
+                          <Search size={24} className="mx-auto mb-2 opacity-20" />
+                          <p className="text-xs font-medium">No icons found</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-bold text-zinc-900 mb-2">Description</label>
               <textarea 
-                rows={4}
+                rows={3}
                 value={newType.description}
                 onChange={e => setNewType({ ...newType, description: e.target.value })}
                 className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"

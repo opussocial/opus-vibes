@@ -12,6 +12,7 @@ export class SchemaService implements ISchemaService {
       const elementCount = db.prepare("SELECT COUNT(*) as count FROM elements WHERE type_id = ?").get(type.id) as { count: number };
       return { 
         ...type, 
+        statuses: type.statuses ? JSON.parse(type.statuses) : [],
         properties: props, 
         allowed_parent_types: allowedParents.map((p: any) => p.parent_type_id),
         element_count: elementCount.count
@@ -19,12 +20,12 @@ export class SchemaService implements ISchemaService {
     });
   }
 
-  async createType(data: { name: string, description: string, properties: any[], allowed_parent_types?: number[] }): Promise<number> {
-    const { name, description, properties, allowed_parent_types } = data;
+  async createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<number> {
+    const { name, description, statuses, color, icon, properties, allowed_parent_types } = data;
     const slug = slugify(name);
     
     const transaction = db.transaction(() => {
-      const typeId = db.prepare("INSERT INTO element_types (name, slug, description) VALUES (?, ?, ?)").run(name, slug, description).lastInsertRowid as number;
+      const typeId = db.prepare("INSERT INTO element_types (name, slug, description, statuses, color, icon) VALUES (?, ?, ?, ?, ?, ?)").run(name, slug, description, statuses ? JSON.stringify(statuses) : null, color || "#6366f1", icon || "Package").lastInsertRowid as number;
       const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
       for (const prop of properties) {
         insertProp.run(typeId, prop.table_name, prop.label);
@@ -50,8 +51,8 @@ export class SchemaService implements ISchemaService {
     return transaction();
   }
 
-  async updateType(idOrSlug: string, data: { name: string, description: string, properties: any[], allowed_parent_types?: number[] }): Promise<void> {
-    const { name, description, properties, allowed_parent_types } = data;
+  async updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<void> {
+    const { name, description, statuses, color, icon, properties, allowed_parent_types } = data;
     const isId = /^\d+$/.test(idOrSlug);
 
     const type = db.prepare(`SELECT * FROM element_types WHERE ${isId ? "id" : "slug"} = ?`).get(idOrSlug) as any;
@@ -71,7 +72,7 @@ export class SchemaService implements ISchemaService {
     }
 
     const transaction = db.transaction(() => {
-      db.prepare("UPDATE element_types SET name = ?, slug = ?, description = ? WHERE id = ?").run(name, slugify(name), description, type.id);
+      db.prepare("UPDATE element_types SET name = ?, slug = ?, description = ?, statuses = ?, color = ?, icon = ? WHERE id = ?").run(name, slugify(name), description, statuses ? JSON.stringify(statuses) : null, color || "#6366f1", icon || "Package", type.id);
       
       if (!hasElements) {
         db.prepare("DELETE FROM properties WHERE type_id = ?").run(type.id);

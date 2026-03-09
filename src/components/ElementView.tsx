@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import * as LucideIcons from "lucide-react";
 import { X, Calendar, MapPin, Link as LinkIcon, FileText, Package, Clock, Info, Loader2, Database, ChevronRight, Plus, Trash2, ArrowRight } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ElementDetail, User, MODULAR_TABLES, Element, GraphEdge, ElementType, RelationshipType } from "../types";
 import { Interactions } from "./Interactions";
 import { Badge } from "./common/Badge";
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface ElementViewProps {
   currentUser: User | null;
@@ -105,18 +111,21 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-zinc-200 overflow-hidden flex flex-col"
     >
-      <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-marine">
+      <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-brand-yellow rounded-2xl flex items-center justify-center text-marine shadow-lg border-2 border-marine-light">
-            <Info size={24} />
+          <div 
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg border-2 border-white"
+            style={{ backgroundColor: types.find(t => t.id === element.type_id)?.color || "#6366f1" }}
+          >
+            <IconRenderer name={types.find(t => t.id === element.type_id)?.icon || "Package"} size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white">{element.name}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-zinc-900">{element.name}</h2>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="px-2 py-0.5 bg-white/20 text-brand-yellow rounded text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 rounded text-[10px] font-bold uppercase tracking-wider">
                 {element.type_name}
               </span>
-              <span className="text-[10px] text-brand-yellow/60 flex items-center gap-1">
+              <span className="text-[10px] text-zinc-400 flex items-center gap-1">
                 <Clock size={10} />
                 Updated {new Date(element.updated_at).toLocaleDateString()}
               </span>
@@ -125,7 +134,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
         </div>
         <button 
           onClick={() => navigate(-1)} 
-          className="p-2 hover:bg-white/10 text-white rounded-xl transition-colors"
+          className="p-2 hover:bg-zinc-100 text-zinc-400 rounded-xl transition-colors"
         >
           <X size={20} />
         </button>

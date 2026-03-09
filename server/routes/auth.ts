@@ -1,10 +1,11 @@
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
 import { authService } from "../services";
+import { validate, registerSchema, loginSchema, resetPasswordSchema } from "../validation";
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
+router.post("/register", validate(registerSchema), async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const user = await authService.register(username, email, password);
@@ -15,7 +16,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req, res) => {
   const { username, password } = req.body;
   try {
     const user = await authService.login(username, password);
@@ -40,7 +41,7 @@ router.post("/logout", (req, res) => {
   res.json({ success: true });
 });
 
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", validate(resetPasswordSchema), async (req, res) => {
   const { email, newPassword } = req.body;
   try {
     const success = await authService.resetPassword(email, newPassword);

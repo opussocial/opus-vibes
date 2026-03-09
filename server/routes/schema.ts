@@ -1,6 +1,7 @@
 import express from "express";
 import { requireAuth, requirePermission } from "../middleware";
 import { schemaService } from "../services";
+import { validate, typeSchema, relationshipTypeSchema } from "../validation";
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.get("/types", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/types", requirePermission("manage_types"), async (req, res) => {
+router.post("/types", requirePermission("manage_types"), validate(typeSchema), async (req, res) => {
   const { name, description, properties, allowed_parent_types } = req.body;
   try {
     const id = await schemaService.createType({ name, description, properties, allowed_parent_types });
@@ -23,7 +24,7 @@ router.post("/types", requirePermission("manage_types"), async (req, res) => {
   }
 });
 
-router.put("/types/:idOrSlug", requirePermission("manage_types"), async (req, res) => {
+router.put("/types/:idOrSlug", requirePermission("manage_types"), validate(typeSchema), async (req, res) => {
   const { idOrSlug } = req.params;
   const { name, description, properties, allowed_parent_types } = req.body;
   try {
@@ -53,7 +54,7 @@ router.get("/relationship-types", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/relationship-types", requirePermission("manage_types"), async (req, res) => {
+router.post("/relationship-types", requirePermission("manage_types"), validate(relationshipTypeSchema), async (req, res) => {
   const { source_type_id, target_type_id, name } = req.body;
   try {
     const id = await schemaService.createRelationshipType({ source_type_id, target_type_id, name });

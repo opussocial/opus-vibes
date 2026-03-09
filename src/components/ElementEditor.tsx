@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import * as LucideIcons from "lucide-react";
 import { X, Save, Loader2 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Element, ElementType, ElementDetail, TypePermission, User } from "../types";
 import { Badge } from "./common/Badge";
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface ElementEditorProps {
   types: ElementType[];
@@ -93,15 +99,23 @@ export const ElementEditor = ({
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-zinc-200 overflow-hidden flex flex-col"
     >
-      <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-marine">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Badge color="blue">{editingElement.type_name}</Badge>
-            <span className="text-xs text-brand-yellow/60 font-medium">#{editingElement.id || "New"}</span>
+      <div 
+        className="p-8 border-b border-zinc-100 flex items-center justify-between"
+        style={{ backgroundColor: types.find(t => t.id === editingElement.type_id)?.color || "#6366f1" }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white shadow-lg border-2 border-white/20">
+            <IconRenderer name={types.find(t => t.id === editingElement.type_id)?.icon || "Package"} size={24} />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">
-            {!editingElement.id ? "Create New" : "Edit"} {editingElement.type_name}
-          </h2>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Badge color="white">{editingElement.type_name}</Badge>
+              <span className="text-xs text-white/60 font-medium">#{editingElement.id || "New"}</span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              {!editingElement.id ? "Create New" : "Edit"} {editingElement.type_name}
+            </h2>
+          </div>
         </div>
         <button 
           onClick={() => navigate(-1)}

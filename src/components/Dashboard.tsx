@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
+import * as LucideIcons from "lucide-react";
 import { Search, FileText, Package, MapPin, Database, Edit3, Eye, Trash2, ChevronRight, ChevronDown, Plus } from "lucide-react";
 import { Element, ElementType, TypePermission } from "../types";
 import { Badge } from "./common/Badge";
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface DashboardProps {
   elements: Element[];
@@ -59,11 +65,11 @@ const ElementRow: React.FC<ElementRowProps> = ({
             ) : (
               <div className="w-6" />
             )}
-            <div className="w-10 h-10 bg-marine/5 rounded-xl flex items-center justify-center text-marine">
-              {el.type_name === "Article" && <FileText size={20} />}
-              {el.type_name === "Product" && <Package size={20} />}
-              {el.type_name === "Event" && <MapPin size={20} />}
-              {!["Article", "Product", "Event"].includes(el.type_name) && <Database size={20} />}
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
+              style={{ backgroundColor: types.find(t => t.id === el.type_id)?.color || "#6366f1" }}
+            >
+              <IconRenderer name={types.find(t => t.id === el.type_id)?.icon || "Package"} size={20} />
             </div>
           </div>
           <div>

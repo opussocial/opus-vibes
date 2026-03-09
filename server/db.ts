@@ -15,7 +15,10 @@ export function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
       slug TEXT NOT NULL UNIQUE,
-      description TEXT
+      description TEXT,
+      statuses TEXT, -- JSON array of strings
+      color TEXT DEFAULT '#6366f1',
+      icon TEXT DEFAULT 'Package'
     );
 
     CREATE TABLE IF NOT EXISTS properties (
@@ -32,6 +35,7 @@ export function initDb() {
       parent_id INTEGER,
       name TEXT NOT NULL,
       slug TEXT NOT NULL UNIQUE,
+      status TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE,
@@ -182,6 +186,10 @@ export function initDb() {
   try { db.exec("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE"); } catch (e) {}
   try { db.exec("ALTER TABLE users ADD COLUMN profile_element_id INTEGER REFERENCES elements(id) ON DELETE SET NULL"); } catch (e) {}
   try { db.exec("ALTER TABLE users ALTER COLUMN password DROP NOT NULL"); } catch (e) {}
+  try { db.exec("ALTER TABLE element_types ADD COLUMN statuses TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE elements ADD COLUMN status TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE element_types ADD COLUMN color TEXT DEFAULT '#6366f1'"); } catch (e) {}
+  try { db.exec("ALTER TABLE element_types ADD COLUMN icon TEXT DEFAULT 'Package'"); } catch (e) {}
   
   // Slug Migrations
   try { db.exec("ALTER TABLE element_types ADD COLUMN slug TEXT"); } catch (e) {}
