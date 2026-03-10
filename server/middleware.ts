@@ -27,6 +27,7 @@ export const authMiddleware = (req: any, res: any, next: any) => {
       
       user.permissions = perms.map(p => p.name);
       user.type_permissions = typePerms;
+      user.settings = user.settings ? JSON.parse(user.settings) : {};
       (req as any).user = user;
     }
   }

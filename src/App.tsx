@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
-import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge } from "./types";
+import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge, SystemConfig, Permission } from "./types";
 
 // --- Components ---
 import { AuthScreen } from "./components/AuthScreen";
@@ -32,6 +32,7 @@ import { Relationships } from "./components/Relationships";
 import { ElementEditor } from "./components/ElementEditor";
 import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
+import { SystemSettings } from "./components/SystemSettings";
 import { TaskMonitor } from "./components/TaskMonitor";
 import { DefinitionManager } from "./components/DefinitionManager";
 
@@ -47,6 +48,7 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [relTypes, setRelTypes] = useState<RelationshipType[]>([]);
   const [graph, setGraph] = useState<GraphEdge[]>([]);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -94,12 +96,13 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const [meRes, eRes, tRes, rtRes, gRes] = await Promise.all([
+      const [meRes, eRes, tRes, rtRes, gRes, cRes] = await Promise.all([
         fetch("/api/me"),
         fetch("/api/elements"),
         fetch("/api/types"),
         fetch("/api/relationship-types"),
-        fetch("/api/graph")
+        fetch("/api/graph"),
+        fetch("/api/config")
       ]);
       
       const user = await meRes.json();
@@ -111,6 +114,7 @@ export default function App() {
       setTypes(await tRes.json());
       setRelTypes(await rtRes.json());
       setGraph(await gRes.json());
+      setSystemConfig(await cRes.json());
 
       if (user.permissions.includes("manage_roles")) {
         const [rRes, uRes, pRes] = await Promise.all([
@@ -476,9 +480,17 @@ export default function App() {
               to="/tasks" 
             />
           )}
-          {hasPermission("manage_types") && (
+          {hasPermission("manage_roles") && (
             <SidebarItem 
               icon={Settings} 
+              label="System Settings" 
+              active={location.pathname === "/settings"} 
+              to="/settings" 
+            />
+          )}
+          {hasPermission("manage_types") && systemConfig.find(c => c.key === "do_structure")?.value !== false && (
+            <SidebarItem 
+              icon={Activity} 
               label="App Definition" 
               active={location.pathname === "/definition"} 
               to="/definition" 
@@ -617,6 +629,7 @@ export default function App() {
               <Profile user={currentUser} />
             } />
             <Route path="/tasks" element={<TaskMonitor />} />
+            <Route path="/settings" element={<SystemSettings />} />
             <Route path="/definition" element={<DefinitionManager />} />
           </Routes>
         </AnimatePresence>

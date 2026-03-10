@@ -5,11 +5,33 @@ import { User, Role, Permission, TypePermission } from "../../src/types";
 
 export class AdminService implements IAdminService {
   async getUsers(): Promise<User[]> {
-    return db.prepare(`
-      SELECT u.id, u.username, u.email, u.role_id, r.name as role_name 
+    const users = db.prepare(`
+      SELECT u.id, u.username, u.email, u.role_id, u.settings, r.name as role_name 
       FROM users u 
       JOIN roles r ON u.role_id = r.id
-    `).all() as User[];
+    `).all() as any[];
+    return users.map(u => ({
+      ...u,
+      settings: u.settings ? JSON.parse(u.settings) : {}
+    }));
+  }
+
+  async getUserById(id: number): Promise<User | null> {
+    const user = db.prepare(`
+      SELECT u.id, u.username, u.email, u.role_id, u.settings, r.name as role_name 
+      FROM users u 
+      JOIN roles r ON u.role_id = r.id
+      WHERE u.id = ?
+    `).get(id) as any;
+    if (!user) return null;
+    return {
+      ...user,
+      settings: user.settings ? JSON.parse(user.settings) : {}
+    };
+  }
+
+  async updateUserSettings(userId: number, settings: any): Promise<void> {
+    db.prepare("UPDATE users SET settings = ? WHERE id = ?").run(JSON.stringify(settings), userId);
   }
 
   async updateUserRole(userId: number, roleId: number): Promise<void> {

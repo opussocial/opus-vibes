@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Shield, Mail, User as UserIcon, MapPin, FileText, Save, Loader2, ExternalLink } from "lucide-react";
+import { Shield, Mail, User as UserIcon, MapPin, FileText, Save, Loader2, ExternalLink, Settings } from "lucide-react";
 import { User, ElementDetail } from "../types";
 import { Badge } from "./common/Badge";
+import { JsonEditor } from "./common/JsonEditor";
 import { Link } from "react-router-dom";
 
 interface ProfileProps {
@@ -11,6 +12,7 @@ interface ProfileProps {
 
 export const Profile = ({ user }: ProfileProps) => {
   const [profile, setProfile] = useState<ElementDetail | null>(null);
+  const [userSettings, setUserSettings] = useState<any>(user.settings || {});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
@@ -25,10 +27,19 @@ export const Profile = ({ user }: ProfileProps) => {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(`/api/elements/${user.profile_element_id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const [profileRes, settingsRes] = await Promise.all([
+        fetch(`/api/elements/${user.profile_element_id}`),
+        fetch(`/api/me`) // Refresh user data to get latest settings
+      ]);
+      
+      if (profileRes.ok) {
+        const data = await profileRes.json();
         setProfile(data);
+      }
+      
+      if (settingsRes.ok) {
+        const userData = await settingsRes.json();
+        setUserSettings(userData.settings || {});
       }
     } catch (err) {
       console.error("Error fetching profile element:", err);
@@ -45,25 +56,32 @@ export const Profile = ({ user }: ProfileProps) => {
     setMessage(null);
 
     try {
-      const res = await fetch(`/api/elements/${profile.slug}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: profile.name,
-          type_id: profile.type_id,
-          modular_data: {
-            content: profile.content || {},
-            place: profile.place || {},
-            file: profile.file || {}
-          }
+      const [profileRes, settingsRes] = await Promise.all([
+        fetch(`/api/elements/${profile.slug}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: profile.name,
+            type_id: profile.type_id,
+            modular_data: {
+              content: profile.content || {},
+              place: profile.place || {},
+              file: profile.file || {}
+            }
+          })
+        }),
+        fetch(`/api/users/${user.id}/settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userSettings)
         })
-      });
+      ]);
 
-      if (res.ok) {
-        setMessage({ type: "success", text: "Profile updated successfully!" });
+      if (profileRes.ok && settingsRes.ok) {
+        setMessage({ type: "success", text: "Profile and settings updated successfully!" });
         fetchProfile();
       } else {
-        setMessage({ type: "error", text: "Failed to update profile." });
+        setMessage({ type: "error", text: "Failed to update profile or settings." });
       }
     } catch (err) {
       setMessage({ type: "error", text: "An error occurred." });
@@ -218,6 +236,14 @@ export const Profile = ({ user }: ProfileProps) => {
                     onChange={e => setProfile({ ...profile, file: { ...profile.file, url: e.target.value } })}
                     className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
                     placeholder="https://example.com/avatar.jpg"
+                  />
+                </div>
+
+                <div className="pt-6 border-t border-zinc-100">
+                  <JsonEditor 
+                    label="Custom User Settings (JSON)"
+                    value={userSettings}
+                    onChange={setUserSettings}
                   />
                 </div>
 

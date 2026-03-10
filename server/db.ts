@@ -18,7 +18,8 @@ export function initDb() {
       description TEXT,
       statuses TEXT, -- JSON array of strings
       color TEXT DEFAULT '#6366f1',
-      icon TEXT DEFAULT 'Package'
+      icon TEXT DEFAULT 'Package',
+      settings TEXT DEFAULT '{}' -- JSON unstructured data
     );
 
     CREATE TABLE IF NOT EXISTS properties (
@@ -149,6 +150,7 @@ export function initDb() {
       google_id TEXT UNIQUE,
       role_id INTEGER NOT NULL,
       profile_element_id INTEGER,
+      settings TEXT DEFAULT '{}', -- JSON unstructured data
       FOREIGN KEY (role_id) REFERENCES roles(id),
       FOREIGN KEY (profile_element_id) REFERENCES elements(id) ON DELETE SET NULL
     );
@@ -194,6 +196,12 @@ export function initDb() {
       completed_at DATETIME
     );
 
+    CREATE TABLE IF NOT EXISTS system_config (
+      key TEXT PRIMARY KEY,
+      value TEXT, -- JSON
+      description TEXT
+    );
+
     -- Trigger to automatically add default permissions for all roles when a new type is created
     CREATE TRIGGER IF NOT EXISTS after_type_insert
     AFTER INSERT ON element_types
@@ -213,6 +221,8 @@ export function initDb() {
   try { db.exec("ALTER TABLE elements ADD COLUMN status TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE element_types ADD COLUMN color TEXT DEFAULT '#6366f1'"); } catch (e) {}
   try { db.exec("ALTER TABLE element_types ADD COLUMN icon TEXT DEFAULT 'Package'"); } catch (e) {}
+  try { db.exec("ALTER TABLE element_types ADD COLUMN settings TEXT DEFAULT '{}'"); } catch (e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN settings TEXT DEFAULT '{}'"); } catch (e) {}
   
   // Slug Migrations
   try { db.exec("ALTER TABLE element_types ADD COLUMN slug TEXT"); } catch (e) {}
@@ -289,6 +299,12 @@ export function initDb() {
     db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole);
     db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("editor", "editor@example.com", hashedPassword, editorRole);
     db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("viewer", "viewer@example.com", hashedPassword, viewerRole);
+
+    // Seed System Config
+    const insertConfig = db.prepare("INSERT OR IGNORE INTO system_config (key, value, description) VALUES (?, ?, ?)");
+    insertConfig.run("allow_circular_dependency", "false", "Allow circular dependencies in type hierarchy");
+    insertConfig.run("do_structure", "true", "Enable structure features");
+    insertConfig.run("dev_mode", "true", "Enable developer mode (always true)");
 
     const insertInteractionType = db.prepare("INSERT INTO interaction_types (name, icon, description) VALUES (?, ?, ?)");
     insertInteractionType.run("like", "Heart", "Users can like elements");

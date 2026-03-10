@@ -1,5 +1,5 @@
 import express from "express";
-import { requirePermission } from "../middleware";
+import { requirePermission, requireAuth } from "../middleware";
 import { adminService } from "../services";
 import { validate, updateUserRoleSchema, createRoleSchema, rolePermissionsSchema, roleTypePermissionsSchema } from "../validation";
 
@@ -27,6 +27,21 @@ router.put("/users/:id/role", requirePermission("manage_roles"), validate(update
   const { role_id } = req.body;
   try {
     await adminService.updateUserRole(parseInt(req.params.id), role_id);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put("/users/:id/settings", requireAuth, async (req: any, res) => {
+  const userId = parseInt(req.params.id);
+  // Only allow users to update their own settings unless they are admin
+  if (req.user.id !== userId && !req.user.permissions.includes("manage_roles")) {
+    return res.status(403).json({ error: "Permission denied" });
+  }
+  
+  try {
+    await adminService.updateUserSettings(userId, req.body);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

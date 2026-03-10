@@ -8,6 +8,7 @@ import { useNavigate, useLocation, Routes, Route, useParams } from "react-router
 import { ElementType } from "../types";
 import { DataTable } from "./common/DataTable";
 import { IconRenderer } from "./common/IconRenderer";
+import { JsonEditor } from "./common/JsonEditor";
 
 const COMMON_ICONS = [
   "Package", "FileText", "Users", "Database", "MapPin", "Calendar", "Clock", 
@@ -445,6 +446,14 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
               );
             })}
           </div>
+        </div>
+
+        <div className="pt-8 border-t border-zinc-100">
+          <JsonEditor 
+            label="Custom Schema Settings (JSON)"
+            value={newType.settings || {}}
+            onChange={(val) => setNewType({ ...newType, settings: val })}
+          />
         </div>
 
         <div className="pt-8 border-t border-zinc-100 flex gap-4">

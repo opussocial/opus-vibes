@@ -15,10 +15,10 @@ router.get("/types", requireAuth, async (req, res) => {
 });
 
 router.post("/types", requirePermission("manage_types"), validate(typeSchema), async (req, res) => {
-  const { name, description, properties, allowed_parent_types } = req.body;
+  const { name, description, properties, allowed_parent_types, statuses, color, icon, settings } = req.body;
   try {
-    const id = await schemaService.createType({ name, description, properties, allowed_parent_types });
-    res.json({ id, name, description, properties, allowed_parent_types });
+    const id = await schemaService.createType({ name, description, properties, allowed_parent_types, statuses, color, icon, settings });
+    res.json({ id, name, description, properties, allowed_parent_types, statuses, color, icon, settings });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
@@ -26,9 +26,9 @@ router.post("/types", requirePermission("manage_types"), validate(typeSchema), a
 
 router.put("/types/:idOrSlug", requirePermission("manage_types"), validate(typeSchema), async (req, res) => {
   const { idOrSlug } = req.params;
-  const { name, description, properties, allowed_parent_types } = req.body;
+  const { name, description, properties, allowed_parent_types, statuses, color, icon, settings } = req.body;
   try {
-    await schemaService.updateType(idOrSlug, { name, description, properties, allowed_parent_types });
+    await schemaService.updateType(idOrSlug, { name, description, properties, allowed_parent_types, statuses, color, icon, settings });
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
