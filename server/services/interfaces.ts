@@ -20,6 +20,7 @@ export interface ISchemaService {
 
 export interface IElementService {
   getElements(allowedTypeIds: number[]): Promise<Element[]>;
+  getRootElements(allowedTypeIds: number[]): Promise<Element[]>;
   getElement(idOrSlug: string): Promise<any>;
   getChildren(idOrSlug: string): Promise<Element[]>;
   getParent(idOrSlug: string): Promise<Element | null>;

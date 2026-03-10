@@ -15,6 +15,17 @@ router.get("/elements", requireAuth, async (req: any, res) => {
   }
 });
 
+router.get("/elements/roots", requireAuth, async (req: any, res) => {
+  const user = req.user;
+  const allowedTypeIds = user.type_permissions.filter((p: any) => p.can_view).map((p: any) => p.type_id);
+  try {
+    const elements = await elementService.getRootElements(allowedTypeIds);
+    res.json(elements);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), async (req, res) => {
   try {
     const element = await elementService.getElement(req.params.id);

@@ -14,7 +14,8 @@ import {
   LogOut,
   Activity,
   Menu,
-  HelpCircle
+  HelpCircle,
+  Network
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
@@ -33,6 +34,7 @@ import { ElementEditor } from "./components/ElementEditor";
 import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
 import { SystemSettings } from "./components/SystemSettings";
+import { ElementBrowser } from "./components/ElementBrowser";
 import { TaskMonitor } from "./components/TaskMonitor";
 import { DefinitionManager } from "./components/DefinitionManager";
 
@@ -449,6 +451,12 @@ export default function App() {
             to="/" 
           />
           <SidebarItem 
+            icon={Network} 
+            label="Browser" 
+            active={location.pathname === "/browser"} 
+            to="/browser" 
+          />
+          <SidebarItem 
             icon={Settings} 
             label="Schema Types" 
             active={location.pathname.startsWith("/types")} 
@@ -547,6 +555,12 @@ export default function App() {
                 types={types}
                 getTypePermission={getTypePermission}
                 handleDelete={handleDelete}
+              />
+            } />
+            <Route path="/browser" element={
+              <ElementBrowser 
+                types={types}
+                relTypes={relTypes}
               />
             } />
             <Route path="/elements/new" element={

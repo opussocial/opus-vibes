@@ -16,6 +16,18 @@ export class ElementService implements IElementService {
     `).all(...allowedTypeIds) as Element[];
   }
 
+  async getRootElements(allowedTypeIds: number[]): Promise<Element[]> {
+    if (allowedTypeIds.length === 0) return [];
+    const placeholders = allowedTypeIds.map(() => "?").join(",");
+    return db.prepare(`
+      SELECT e.*, t.name as type_name 
+      FROM elements e 
+      JOIN element_types t ON e.type_id = t.id
+      WHERE e.type_id IN (${placeholders}) AND e.parent_id IS NULL
+      ORDER BY e.name ASC
+    `).all(...allowedTypeIds) as Element[];
+  }
+
   async getElement(idOrSlug: string): Promise<any> {
     const isId = /^\d+$/.test(idOrSlug);
     const element = db.prepare(`
