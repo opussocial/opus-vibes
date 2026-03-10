@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { User, Role } from "../types";
-import { Badge } from "./common/Badge";
+import { DataTable } from "./common/DataTable";
 
 interface UsersProps {
   users: User[];
@@ -17,71 +17,30 @@ export const Users = ({ users, roles, currentUser, updateUserRole }: UsersProps)
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="max-w-5xl mx-auto"
+      className="max-w-6xl mx-auto"
     >
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-12">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-marine">User Management</h2>
-          <p className="text-zinc-500 mt-1">Manage system users and assign roles.</p>
+          <h2 className="text-4xl font-bold tracking-tight text-marine">User Management</h2>
+          <p className="text-zinc-500 mt-2 text-lg">Manage system users and assign roles.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-zinc-50 border-b border-zinc-100">
-            <tr>
-              <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">User</th>
-              <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">Email</th>
-              <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">Role</th>
-              <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-zinc-400 italic">
-                  No users found in the system.
-                </td>
-              </tr>
-            ) : users.map(user => (
-              <tr key={user.id} className="hover:bg-zinc-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 font-bold text-xs">
-                      {user.username[0].toUpperCase()}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold flex items-center gap-2 text-marine">
-                        {user.username}
-                        {user.id === currentUser?.id && (
-                          <span className="px-1.5 py-0.5 bg-brand-yellow text-marine text-[8px] rounded uppercase tracking-tighter font-bold">You</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-zinc-500">{user.email}</td>
-                <td className="px-6 py-4">
-                  <Badge color={user.role_name === "Super Admin" ? "purple" : user.role_name === "Editor" ? "blue" : "zinc"}>
-                    {user.role_name}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4">
-                  <select 
-                    value={user.role_id}
-                    onChange={(e) => updateUserRole(user.id, parseInt(e.target.value))}
-                    className="text-sm bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-black/5"
-                  >
-                    {roles.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
+      <DataTable 
+        type="users"
+        data={users}
+        actions={(user) => (
+          <select 
+            value={user.role_id}
+            onChange={(e) => updateUserRole(user.id, parseInt(e.target.value))}
+            className="text-sm font-bold bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black/5 transition-all cursor-pointer hover:border-zinc-400"
+          >
+            {roles.map(r => (
+              <option key={r.id} value={r.id}>{r.name}</option>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </select>
+        )}
+      />
     </motion.div>
   );
 };

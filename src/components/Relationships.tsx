@@ -6,10 +6,7 @@ import { Element, RelationshipType, GraphEdge, ElementType } from "../types";
 import { TreeNode } from "./common/TreeNode";
 import * as LucideIcons from "lucide-react";
 
-const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
-  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
-  return <IconComponent size={size} className={className} />;
-};
+import { IconRenderer } from "./common/IconRenderer";
 
 interface RelationshipsProps {
   relTypes: RelationshipType[];

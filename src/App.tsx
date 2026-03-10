@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as LucideIcons from "lucide-react";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -13,6 +14,7 @@ import {
   LogOut,
   Activity,
   Menu,
+  HelpCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
@@ -32,6 +34,8 @@ import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
 import { TaskMonitor } from "./components/TaskMonitor";
 import { DefinitionManager } from "./components/DefinitionManager";
+
+import { IconRenderer } from "./components/common/IconRenderer";
 
 export default function App() {
   const navigate = useNavigate();
@@ -644,7 +648,12 @@ export default function App() {
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
                     >
-                      <div className="w-2 h-2 rounded-full bg-zinc-200" />
+                      <div 
+                        className="w-6 h-6 rounded flex items-center justify-center text-white shadow-sm"
+                        style={{ backgroundColor: t.color || "#6366f1" }}
+                      >
+                        <IconRenderer name={t.icon || "Package"} size={12} />
+                      </div>
                       {t.name}
                     </button>
                   );
@@ -674,7 +683,12 @@ export default function App() {
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
                     >
-                      <div className="w-2 h-2 rounded-full bg-zinc-200" />
+                      <div 
+                        className="w-6 h-6 rounded flex items-center justify-center text-white shadow-sm"
+                        style={{ backgroundColor: t.color || "#6366f1" }}
+                      >
+                        <IconRenderer name={t.icon || "Package"} size={12} />
+                      </div>
                       {t.name}
                     </button>
                   );

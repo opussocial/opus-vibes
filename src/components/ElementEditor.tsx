@@ -6,10 +6,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Element, ElementType, ElementDetail, TypePermission, User } from "../types";
 import { Badge } from "./common/Badge";
 
-const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
-  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
-  return <IconComponent size={size} className={className} />;
-};
+import { IconRenderer } from "./common/IconRenderer";
 
 interface ElementEditorProps {
   types: ElementType[];

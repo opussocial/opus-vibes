@@ -7,10 +7,7 @@ import { ElementDetail, User, MODULAR_TABLES, Element, GraphEdge, ElementType, R
 import { Interactions } from "./Interactions";
 import { Badge } from "./common/Badge";
 
-const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
-  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
-  return <IconComponent size={size} className={className} />;
-};
+import { IconRenderer } from "./common/IconRenderer";
 
 interface ElementViewProps {
   currentUser: User | null;
@@ -162,8 +159,11 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                       className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200 hover:border-zinc-400 transition-all group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-zinc-100 rounded-lg text-zinc-400 group-hover:text-black transition-colors">
-                          <Database size={16} />
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+                          style={{ backgroundColor: types.find(t => t.id === parent.type_id)?.color || "#6366f1" }}
+                        >
+                          <IconRenderer name={types.find(t => t.id === parent.type_id)?.icon || "Package"} size={14} />
                         </div>
                         <div>
                           <p className="text-sm font-bold">{parent.name}</p>
@@ -204,8 +204,11 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                           className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200 hover:border-zinc-400 transition-all group"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-zinc-100 rounded-lg text-zinc-400 group-hover:text-black transition-colors">
-                              <Database size={16} />
+                            <div 
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+                              style={{ backgroundColor: types.find(t => t.id === child.type_id)?.color || "#6366f1" }}
+                            >
+                              <IconRenderer name={types.find(t => t.id === child.type_id)?.icon || "Package"} size={14} />
                             </div>
                             <div>
                               <p className="text-sm font-bold">{child.name}</p>
@@ -294,8 +297,10 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                 {edges.length > 0 ? (
                   edges.map(edge => {
                     const isSource = edge.source_el_id === element.id;
+                    const otherEl = allElements.find(e => e.id === (isSource ? edge.target_el_id : edge.source_el_id));
+                    const otherType = types.find(t => t.id === otherEl?.type_id);
+                    const otherSlug = otherEl?.slug;
                     const otherName = isSource ? edge.target_name : edge.source_name;
-                    const otherSlug = allElements.find(e => e.id === (isSource ? edge.target_el_id : edge.source_el_id))?.slug;
 
                     return (
                       <div key={edge.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm group">
@@ -304,8 +309,11 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                             <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter mb-1">
                               {isSource ? "Source" : "Target"}
                             </span>
-                            <div className={`p-2 rounded-lg ${isSource ? "bg-blue-50 text-blue-500" : "bg-emerald-50 text-emerald-500"}`}>
-                              <LinkIcon size={14} />
+                            <div 
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+                              style={{ backgroundColor: otherType?.color || "#6366f1" }}
+                            >
+                              <IconRenderer name={otherType?.icon || "Package"} size={14} />
                             </div>
                           </div>
                           
