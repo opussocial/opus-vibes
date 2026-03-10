@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import * as LucideIcons from "lucide-react";
-import { X, Calendar, MapPin, Link as LinkIcon, FileText, Package, Clock, Info, Loader2, Database, ChevronRight, Plus, Trash2, ArrowRight } from "lucide-react";
+import { X, Calendar, MapPin, Link as LinkIcon, FileText, Package, Clock, Info, Loader2, Database, ChevronRight, Plus, Trash2, ArrowRight, Palette } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ElementDetail, User, MODULAR_TABLES, Element, GraphEdge, ElementType, RelationshipType } from "../types";
 import { Interactions } from "./Interactions";
@@ -360,6 +360,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                     {table.value === 'product_info' && <Package size={18} />}
                     {table.value === 'urls_embeds' && <LinkIcon size={18} />}
                     {table.value === 'time_tracking' && <Calendar size={18} />}
+                    {table.value === 'color_info' && <Palette size={18} />}
                     <h3 className="text-xs font-bold uppercase tracking-widest">{table.label}</h3>
                   </div>
                   
@@ -417,6 +418,19 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                         <div className="pt-2 border-t border-zinc-200 flex justify-between items-center">
                           <span className="text-xs font-bold text-zinc-400 uppercase">Duration</span>
                           <span className="text-lg font-bold">{data.duration} mins</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {table.value === 'color_info' && (
+                      <div className="flex items-center gap-4">
+                        <div 
+                          className="w-16 h-16 rounded-2xl shadow-inner border border-zinc-200"
+                          style={{ backgroundColor: data.hex || "#000000" }}
+                        />
+                        <div>
+                          <p className="text-sm font-bold text-zinc-900">{data.label || "Untitled Color"}</p>
+                          <p className="text-xs font-mono text-zinc-400 uppercase">{data.hex || "#000000"}</p>
                         </div>
                       </div>
                     )}

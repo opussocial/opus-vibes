@@ -451,6 +451,51 @@ export const ElementEditor = ({
                   </div>
                 </div>
               )}
+
+              {prop.table_name === "color_info" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase mb-1.5">Color Picker</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="color"
+                        disabled={!canEdit}
+                        value={editingElement.color_info?.hex || "#000000"}
+                        onChange={e => setEditingElement({
+                          ...editingElement,
+                          color_info: { ...editingElement.color_info, hex: e.target.value }
+                        })}
+                        className="w-12 h-12 p-1 bg-zinc-50 border border-zinc-200 rounded-xl cursor-pointer disabled:opacity-50"
+                      />
+                      <input 
+                        type="text"
+                        disabled={!canEdit}
+                        value={editingElement.color_info?.hex || "#000000"}
+                        onChange={e => setEditingElement({
+                          ...editingElement,
+                          color_info: { ...editingElement.color_info, hex: e.target.value }
+                        })}
+                        className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all font-mono text-sm uppercase disabled:opacity-50"
+                        placeholder="#000000"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase mb-1.5">Color Label</label>
+                    <input 
+                      type="text"
+                      disabled={!canEdit}
+                      value={editingElement.color_info?.label || ""}
+                      onChange={e => setEditingElement({
+                        ...editingElement,
+                        color_info: { ...editingElement.color_info, label: e.target.value }
+                      })}
+                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all disabled:opacity-50"
+                      placeholder="e.g. Primary, Accent..."
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         ))}

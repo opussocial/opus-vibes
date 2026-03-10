@@ -2,8 +2,14 @@ import React from "react";
 import { motion } from "motion/react";
 import { Lock, X, Plus, Save } from "lucide-react";
 import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
-import { Role, Permission } from "../types";
+import { Role, Permission, ElementType } from "../types";
 import { Badge } from "./common/Badge";
+import * as LucideIcons from "lucide-react";
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface RolesProps {
   roles: Role[];
@@ -14,6 +20,7 @@ interface RolesProps {
   newRole: { name: string; description: string };
   setNewRole: (val: { name: string; description: string }) => void;
   handleCreateRole: (e: React.FormEvent) => void;
+  types: ElementType[];
 }
 
 export const Roles = ({ 
@@ -24,7 +31,8 @@ export const Roles = ({
   updateRoleTypePermission,
   newRole,
   setNewRole,
-  handleCreateRole
+  handleCreateRole,
+  types
 }: RolesProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -97,10 +105,19 @@ export const Roles = ({
                       <div className="space-y-3">
                         {role.type_permissions.map(tp => {
                           const isSuperAdmin = role.name === "Super Admin";
+                          const type = types.find(t => t.id === tp.type_id);
                           return (
                             <div key={tp.type_id} className="p-4 bg-zinc-50 rounded-xl border border-zinc-100">
                               <div className="flex items-center justify-between mb-3">
-                                <span className="text-sm font-bold">{tp.type_name}</span>
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-6 h-6 rounded flex items-center justify-center text-white shadow-sm"
+                                    style={{ backgroundColor: type?.color || "#6366f1" }}
+                                  >
+                                    <IconRenderer name={type?.icon || "Package"} size={12} />
+                                  </div>
+                                  <span className="text-sm font-bold">{tp.type_name}</span>
+                                </div>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                   <input 
                                     type="checkbox"

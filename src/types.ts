@@ -116,4 +116,5 @@ export const MODULAR_TABLES = [
   { value: "urls_embeds", label: "URL/Embed", fields: ["url", "title", "embed_code"] },
   { value: "time_tracking", label: "Time Tracking", fields: ["start_time", "end_time", "duration"] },
   { value: "product_info", label: "Product Info", fields: ["sku", "price", "currency", "stock"] },
+  { value: "color_info", label: "Color Picker", fields: ["hex", "label"] },
 ];

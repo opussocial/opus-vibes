@@ -81,12 +81,22 @@ export const DefinitionManager = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Export Card */}
-        <div className="bg-white rounded-3xl border border-zinc-200 p-8 shadow-sm">
+        <div className="bg-white rounded-3xl border border-zinc-200 p-8 shadow-sm flex flex-col">
           <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-6">
             <Download size={24} />
           </div>
           <h3 className="text-xl font-bold text-zinc-900 mb-2">Export Structure</h3>
-          <p className="text-zinc-500 text-sm mb-8">Download a JSON file containing all element types, properties, roles, and relationship definitions.</p>
+          <p className="text-zinc-500 text-sm mb-6 flex-1">
+            Download a JSON file containing all element types, properties, roles, and relationship definitions. 
+            Use this to backup your structure or move it to another environment.
+          </p>
+          <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 mb-6">
+            <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2">Instructions</h4>
+            <p className="text-xs text-blue-800 leading-relaxed">
+              Click the button below to generate a snapshot of your current application definition. 
+              This includes schemas, roles, and relationships, but **no element data**.
+            </p>
+          </div>
           <button
             onClick={handleExport}
             disabled={loading}
@@ -98,12 +108,22 @@ export const DefinitionManager = () => {
         </div>
 
         {/* Import Card */}
-        <div className="bg-white rounded-3xl border border-zinc-200 p-8 shadow-sm">
+        <div className="bg-white rounded-3xl border border-zinc-200 p-8 shadow-sm flex flex-col">
           <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 mb-6">
             <Upload size={24} />
           </div>
           <h3 className="text-xl font-bold text-zinc-900 mb-2">Import Structure</h3>
-          <p className="text-zinc-500 text-sm mb-8">Upload a previously exported JSON file to update or restore the application structure. <span className="text-red-500 font-medium">This will overwrite existing definitions.</span></p>
+          <p className="text-zinc-500 text-sm mb-6 flex-1">
+            Upload a previously exported JSON file to update or restore the application structure. 
+            <span className="text-red-500 font-medium ml-1">Warning: This will overwrite existing definitions.</span>
+          </p>
+          <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100 mb-6">
+            <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-2">Instructions</h4>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              Select a valid `.json` definition file. The system will merge types and roles by their unique slugs. 
+              Existing records will be updated with the new structure.
+            </p>
+          </div>
           
           <label className="block">
             <span className="sr-only">Choose file</span>

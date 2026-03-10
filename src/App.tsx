@@ -54,6 +54,7 @@ export default function App() {
     description: "", 
     properties: [], 
     allowed_parent_types: [], 
+    statuses: ["draft", "public"],
     color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`, 
     icon: "Package" 
   });
@@ -244,6 +245,7 @@ export default function App() {
       description: "", 
       properties: [],
       allowed_parent_types: [],
+      statuses: ["draft", "public"],
       color: "#6366f1",
       icon: "Package"
     });
@@ -359,6 +361,7 @@ export default function App() {
       if (p.table_name === "urls_embeds") defaults = { title: "Untitled Link" };
       if (p.table_name === "product_info") defaults = { currency: "USD", sku: "SKU-000" };
       if (p.table_name === "place") defaults = { address: "Untitled Location" };
+      if (p.table_name === "color_info") defaults = { hex: "#6366f1", label: "Primary Color" };
       initialData[p.table_name] = defaults;
     });
     setEditingElement(initialData);
@@ -578,6 +581,7 @@ export default function App() {
                 newRole={newRole}
                 setNewRole={setNewRole}
                 handleCreateRole={handleCreateRole}
+                types={types}
               />
             } />
             <Route path="/relationships/*" element={

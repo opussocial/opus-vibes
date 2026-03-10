@@ -1,9 +1,15 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Plus, Trash2, X, Save, Link as LinkIcon } from "lucide-react";
+import { Plus, Trash2, X, Save, Link as LinkIcon, HelpCircle } from "lucide-react";
 import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
 import { Element, RelationshipType, GraphEdge, ElementType } from "../types";
 import { TreeNode } from "./common/TreeNode";
+import * as LucideIcons from "lucide-react";
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface RelationshipsProps {
   relTypes: RelationshipType[];
@@ -73,15 +79,27 @@ export const Relationships = ({
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 p-3 bg-zinc-50 rounded-xl border border-zinc-100 text-center">
-                        <p className="text-xs font-bold text-zinc-400 mb-1">SOURCE</p>
+                      <div className="flex-1 p-3 bg-zinc-50 rounded-xl border border-zinc-100 text-center flex flex-col items-center">
+                        <p className="text-xs font-bold text-zinc-400 mb-2 uppercase tracking-widest">Source</p>
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm mb-2"
+                          style={{ backgroundColor: types.find(t => t.id === rt.source_type_id)?.color || "#6366f1" }}
+                        >
+                          <IconRenderer name={types.find(t => t.id === rt.source_type_id)?.icon || "Package"} size={14} />
+                        </div>
                         <p className="text-sm font-bold">{rt.source_type_name}</p>
                       </div>
                       <div className="w-8 h-px bg-zinc-200 relative">
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 border-t border-r border-zinc-300 rotate-45" />
                       </div>
-                      <div className="flex-1 p-3 bg-zinc-50 rounded-xl border border-zinc-100 text-center">
-                        <p className="text-xs font-bold text-zinc-400 mb-1">TARGET</p>
+                      <div className="flex-1 p-3 bg-zinc-50 rounded-xl border border-zinc-100 text-center flex flex-col items-center">
+                        <p className="text-xs font-bold text-zinc-400 mb-2 uppercase tracking-widest">Target</p>
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm mb-2"
+                          style={{ backgroundColor: types.find(t => t.id === rt.target_type_id)?.color || "#6366f1" }}
+                        >
+                          <IconRenderer name={types.find(t => t.id === rt.target_type_id)?.icon || "Package"} size={14} />
+                        </div>
                         <p className="text-sm font-bold">{rt.target_type_name}</p>
                       </div>
                     </div>
@@ -107,22 +125,49 @@ export const Relationships = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
-                    {graph.map(edge => (
-                      <tr key={edge.id} className="hover:bg-zinc-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold">{edge.source_name}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="px-3 py-1 bg-zinc-100 rounded-full text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                            {edge.rel_name}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-bold">{edge.target_name}</td>
-                        <td className="px-6 py-4">
-                          <button onClick={() => deleteEdge(edge.id)} className="text-zinc-300 hover:text-red-500 transition-colors">
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {graph.map(edge => {
+                      const sourceEl = elements.find(e => e.id === edge.source_el_id);
+                      const targetEl = elements.find(e => e.id === edge.target_el_id);
+                      const sourceType = types.find(t => t.id === sourceEl?.type_id);
+                      const targetType = types.find(t => t.id === targetEl?.type_id);
+
+                      return (
+                        <tr key={edge.id} className="hover:bg-zinc-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+                                style={{ backgroundColor: sourceType?.color || "#6366f1" }}
+                              >
+                                <IconRenderer name={sourceType?.icon || "Package"} size={14} />
+                              </div>
+                              <span className="font-bold">{edge.source_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="px-3 py-1 bg-zinc-100 rounded-full text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                              {edge.rel_name}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+                                style={{ backgroundColor: targetType?.color || "#6366f1" }}
+                              >
+                                <IconRenderer name={targetType?.icon || "Package"} size={14} />
+                              </div>
+                              <span className="font-bold">{edge.target_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button onClick={() => deleteEdge(edge.id)} className="text-zinc-300 hover:text-red-500 transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

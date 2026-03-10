@@ -148,6 +148,8 @@ export const SchemaTypes = ({
                         {p.table_name === "urls_embeds" && <LinkIcon size={16} className="text-purple-500" />}
                         {p.table_name === "time_tracking" && <Clock size={16} className="text-orange-500" />}
                         {p.table_name === "product_info" && <Package size={16} className="text-green-500" />}
+                        {p.table_name === "file" && <Database size={16} className="text-zinc-500" />}
+                        {p.table_name === "color_info" && <Palette size={16} className="text-pink-500" />}
                         {p.label}
                         <span className="ml-auto text-[10px] text-zinc-400 font-mono uppercase">{p.table_name}</span>
                       </div>
@@ -470,6 +472,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
                       {table.value === "time_tracking" && <Clock size={16} />}
                       {table.value === "product_info" && <Package size={16} />}
                       {table.value === "file" && <Database size={16} />}
+                      {table.value === "color_info" && <Palette size={16} />}
                     </div>
                     <span className="text-sm font-bold">{table.label}</span>
                   </button>

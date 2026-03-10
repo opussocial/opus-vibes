@@ -1,6 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
 @import "tailwindcss";
 
+/* 
+  Custom Locally Hosted Fonts Structure
+  To add a new font:
+  1. Upload the font file to /public/fonts/
+  2. Uncomment and update the @font-face declaration below
+*/
+
+/*
+@font-face {
+  font-family: 'CustomFont';
+  src: url('/fonts/CustomFont-Regular.woff2') format('woff2'),
+       url('/fonts/CustomFont-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
 @theme {
   --font-sans: "Source Sans Pro", ui-sans-serif, system-ui, sans-serif;
   
