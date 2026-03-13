@@ -1,21 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import * as LucideIcons from "lucide-react";
 import { 
   Plus, Lock, Trash2, FileText, MapPin, Link as LinkIcon, Clock, Package, X, Save, 
   Database, Edit2, AlertCircle, Palette, Search
 } from "lucide-react";
 import { useNavigate, useLocation, Routes, Route, useParams } from "react-router-dom";
 import { ElementType } from "../types";
-import { DataTable } from "./common/DataTable";
-import { IconRenderer } from "./common/IconRenderer";
-import { JsonEditor } from "./common/JsonEditor";
+import { Badge } from "./common/Badge";
 
 const COMMON_ICONS = [
-  "Package", "FileText", "Users", "Database", "MapPin", "Calendar", "Clock", 
-  "Shield", "Settings", "Activity", "Layers", "Box", "Briefcase", "Globe", 
-  "Home", "Image", "Link", "Mail", "MessageSquare", "Music", "Phone", 
-  "Search", "Star", "Tag", "Video", "Zap", "Heart", "Flag", "Bell", "Bookmark"
+  "Package", "FileText", "MapPin", "Link", "Clock", "Database", "User", "Users", 
+  "Settings", "Home", "Search", "Bell", "Mail", "Calendar", "Camera", "Image", 
+  "Video", "Music", "Globe", "Briefcase", "ShoppingCart", "CreditCard", "Tag", 
+  "Bookmark", "Heart", "Star", "MessageSquare", "Share2", "Download", "Upload", 
+  "Trash2", "Edit", "Plus", "Minus", "Check", "X", "Info", "AlertCircle", 
+  "HelpCircle", "Lock", "Unlock"
 ];
+
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface SchemaTypesProps {
   types: ElementType[];
@@ -39,13 +45,24 @@ export const SchemaTypes = ({
   handleUpdateType,
   toggleProp,
   MODULAR_TABLES
-}: SchemaTypesProps) => {
+}: any) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [allowCircular, setAllowCircular] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/features")
+      .then(res => res.json())
+      .then(data => {
+        setAllowCircular(!!data.allow_schema_circular_dependencies);
+      })
+      .catch(err => console.error("Error fetching features:", err));
+  }, []);
 
   const isCreating = location.pathname.endsWith("/new");
 
   const wouldCreateCycle = (targetTypeId: number, potentialParentId: number) => {
+    if (allowCircular) return false;
     if (targetTypeId === potentialParentId) return true;
     
     const visited = new Set<number>();
@@ -69,40 +86,118 @@ export const SchemaTypes = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <Routes>
         <Route path="/" element={
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-12"
+            className="space-y-10"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-4xl font-bold tracking-tight text-marine">Schema Types</h2>
-                <p className="text-zinc-500 mt-2 text-lg">Define the structure of your elements and their modular properties.</p>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Schema Types</h2>
+                <p className="text-zinc-500 mt-1 text-sm md:text-base">Define the structure of your elements and their modular properties.</p>
               </div>
             </div>
 
             {!hasPermission("manage_types") && (
-              <div className="p-8 bg-orange-50 border border-orange-100 rounded-3xl flex items-center gap-6 text-orange-800 shadow-sm">
-                <Lock size={32} />
+              <div className="p-6 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-4 text-orange-800">
+                <Lock size={24} />
                 <div>
-                  <p className="font-bold text-lg">Restricted Access</p>
-                  <p className="opacity-80">You don't have permission to modify schema types. Contact an administrator for access.</p>
+                  <p className="font-bold">Restricted Access</p>
+                  <p className="text-sm opacity-80">You don't have permission to modify schema types. Contact an administrator for access.</p>
                 </div>
               </div>
             )}
 
-            <DataTable 
-              type="types"
-              data={types}
-              onEdit={(type) => {
-                setNewType(type);
-                navigate(`/types/${type.slug}/edit`);
-              }}
-              onDelete={(type) => deleteType(type.slug)}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {types.map((type) => (
+                <div key={type.id} className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
+                        style={{ backgroundColor: type.color || "#6366f1" }}
+                      >
+                        <IconRenderer name={type.icon || "Package"} size={20} />
+                      </div>
+                      <h3 className="text-xl font-bold">{type.name}</h3>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge color="zinc">{type.properties.length} Props</Badge>
+                      {hasPermission("manage_types") && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              setNewType(type);
+                              navigate(`/types/${type.slug}/edit`);
+                            }}
+                            className="p-1 hover:bg-marine/5 text-zinc-300 hover:text-marine rounded transition-colors"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => deleteType(type.slug)}
+                            className="p-1 hover:bg-red-50 text-zinc-300 hover:text-red-500 rounded transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
+                    {type.description}
+                  </p>
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Included Modules</p>
+                    {type.properties.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 text-sm font-medium text-zinc-700 bg-zinc-50 p-2.5 rounded-xl border border-zinc-100">
+                        {p.table_name === "content" && <FileText size={16} className="text-blue-500" />}
+                        {p.table_name === "place" && <MapPin size={16} className="text-red-500" />}
+                        {p.table_name === "urls_embeds" && <LinkIcon size={16} className="text-purple-500" />}
+                        {p.table_name === "time_tracking" && <Clock size={16} className="text-orange-500" />}
+                        {p.table_name === "product_info" && <Package size={16} className="text-green-500" />}
+                        {p.label}
+                        <span className="ml-auto text-[10px] text-zinc-400 font-mono uppercase">{p.table_name}</span>
+                      </div>
+                    ))}
+                    {type.statuses && type.statuses.length > 0 && (
+                      <div className="pt-4 mt-4 border-t border-zinc-50">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Clock size={10} />
+                          Allowed Statuses
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {type.statuses.map(status => (
+                            <Badge key={status} color="blue">{status}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {type.allowed_parent_types && type.allowed_parent_types.length > 0 && (
+                      <div className="pt-4 mt-4 border-t border-zinc-50">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Database size={10} />
+                          Allowed Parents
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {type.allowed_parent_types.map(parentId => {
+                            const parentType = types.find(t => t.id === parentId);
+                            return parentType ? (
+                              <span key={parentId}>
+                                <Badge color="zinc">{parentType.name}</Badge>
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
         } />
 
@@ -173,6 +268,18 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
   const [iconSearch, setIconSearch] = useState("");
   const [showIconList, setShowIconList] = useState(false);
   const [newStatus, setNewStatus] = useState("");
+  const [colorPresets, setColorPresets] = useState<string[]>(["#6366f1", "#ec4899", "#f43f5e", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#71717a"]);
+
+  React.useEffect(() => {
+    fetch("/api/settings/brand_color_presets")
+      .then(res => res.json())
+      .then(data => {
+        if (data.value) {
+          setColorPresets(data.value);
+        }
+      })
+      .catch(err => console.error("Error fetching color presets:", err));
+  }, []);
 
   const filteredIcons = COMMON_ICONS.filter(icon => 
     icon.toLowerCase().includes(iconSearch.toLowerCase())
@@ -237,20 +344,33 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
                   <Palette size={14} className="text-zinc-400" />
                   Brand Color
                 </label>
-                <div className="flex gap-2">
-                  <input 
-                    type="color" 
-                    value={newType.color || "#6366f1"}
-                    onChange={e => setNewType({ ...newType, color: e.target.value })}
-                    className="w-12 h-12 p-1 bg-zinc-50 border border-zinc-200 rounded-xl cursor-pointer"
-                  />
-                  <input 
-                    type="text" 
-                    value={newType.color || "#6366f1"}
-                    onChange={e => setNewType({ ...newType, color: e.target.value })}
-                    className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all font-mono text-sm uppercase"
-                    placeholder="#000000"
-                  />
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={newType.color || "#6366f1"}
+                      onChange={e => setNewType({ ...newType, color: e.target.value })}
+                      className="w-12 h-12 p-1 bg-zinc-50 border border-zinc-200 rounded-xl cursor-pointer"
+                    />
+                    <input 
+                      type="text" 
+                      value={newType.color || "#6366f1"}
+                      onChange={e => setNewType({ ...newType, color: e.target.value })}
+                      className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all font-mono text-sm uppercase"
+                      placeholder="#000000"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {colorPresets.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setNewType({ ...newType, color: c })}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${newType.color === c ? "border-zinc-900 scale-110" : "border-transparent hover:scale-110"}`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -386,7 +506,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
                       {table.value === "time_tracking" && <Clock size={16} />}
                       {table.value === "product_info" && <Package size={16} />}
                       {table.value === "file" && <Database size={16} />}
-                      {table.value === "color_info" && <Palette size={16} />}
+                      {table.value === "color" && <Palette size={16} />}
                     </div>
                     <span className="text-sm font-bold">{table.label}</span>
                   </button>
@@ -432,11 +552,10 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
                   }`}
                 >
-                  <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
-                    style={{ backgroundColor: t.color || "#6366f1" }}
-                  >
-                    <IconRenderer name={t.icon || "Package"} size={14} />
+                  <div className={`p-2 rounded-lg ${
+                    isSelected ? "bg-white/20" : "bg-zinc-100"
+                  }`}>
+                    <Database size={16} />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold">{t.name}</span>
@@ -446,14 +565,6 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
               );
             })}
           </div>
-        </div>
-
-        <div className="pt-8 border-t border-zinc-100">
-          <JsonEditor 
-            label="Custom Schema Settings (JSON)"
-            value={newType.settings || {}}
-            onChange={(val) => setNewType({ ...newType, settings: val })}
-          />
         </div>
 
         <div className="pt-8 border-t border-zinc-100 flex gap-4">

@@ -9,7 +9,6 @@ export interface ElementType {
   properties: Property[];
   allowed_parent_types?: number[];
   element_count?: number;
-  settings?: any; // JSON unstructured data
 }
 
 export interface Property {
@@ -63,7 +62,6 @@ export interface User {
   profile_element_id?: number;
   permissions: string[];
   type_permissions: TypePermission[];
-  settings?: any; // JSON unstructured data
 }
 
 export interface TypePermission {
@@ -118,11 +116,5 @@ export const MODULAR_TABLES = [
   { value: "urls_embeds", label: "URL/Embed", fields: ["url", "title", "embed_code"] },
   { value: "time_tracking", label: "Time Tracking", fields: ["start_time", "end_time", "duration"] },
   { value: "product_info", label: "Product Info", fields: ["sku", "price", "currency", "stock"] },
-  { value: "color_info", label: "Color Picker", fields: ["hex", "label"] },
+  { value: "color", label: "Color Picker", fields: ["hex"] },
 ];
-
-export interface SystemConfig {
-  key: string;
-  value: any;
-  description: string;
-}

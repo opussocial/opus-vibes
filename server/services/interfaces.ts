@@ -10,8 +10,8 @@ export interface IAuthService {
 
 export interface ISchemaService {
   getTypes(): Promise<ElementType[]>;
-  createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[], settings?: any }): Promise<number>;
-  updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[], settings?: any }): Promise<void>;
+  createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<number>;
+  updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<void>;
   deleteType(idOrSlug: string): Promise<void>;
   getRelationshipTypes(): Promise<RelationshipType[]>;
   createRelationshipType(data: { source_type_id: number, target_type_id: number, name: string }): Promise<number>;
@@ -20,7 +20,6 @@ export interface ISchemaService {
 
 export interface IElementService {
   getElements(allowedTypeIds: number[]): Promise<Element[]>;
-  getRootElements(allowedTypeIds: number[]): Promise<Element[]>;
   getElement(idOrSlug: string): Promise<any>;
   getChildren(idOrSlug: string): Promise<Element[]>;
   getParent(idOrSlug: string): Promise<Element | null>;
@@ -42,12 +41,17 @@ export interface IInteractionService {
 
 export interface IAdminService {
   getUsers(): Promise<User[]>;
-  getUserById(id: number): Promise<User | null>;
-  updateUserSettings(userId: number, settings: any): Promise<void>;
   updateUserRole(userId: number, roleId: number): Promise<void>;
   getRoles(): Promise<Role[]>;
   createRole(data: { name: string, description: string }): Promise<number>;
   updateRolePermissions(roleIdOrSlug: string, permissionIds: number[]): Promise<void>;
   updateRoleTypePermissions(roleIdOrSlug: string, typeIdOrSlug: string, permissions: Partial<TypePermission>): Promise<void>;
   getPermissions(): Promise<Permission[]>;
+}
+
+export interface ISettingsService {
+  getSettings(filters: { type_id?: number, user_id?: number }): Promise<any>;
+  getSetting(key: string, filters: { type_id?: number, user_id?: number }): Promise<any>;
+  updateSetting(key: string, value: any, filters: { type_id?: number, user_id?: number }): Promise<void>;
+  deleteSetting(key: string, filters: { type_id?: number, user_id?: number }): Promise<void>;
 }

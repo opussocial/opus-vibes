@@ -2,7 +2,7 @@ import { db } from "../db";
 import { slugify } from "../utils";
 import { ISchemaService } from "./interfaces";
 import { ElementType, RelationshipType } from "../../src/types";
-import { configService } from "./index";
+import { featureService } from "./FeatureService";
 
 export class SchemaService implements ISchemaService {
   async getTypes(): Promise<ElementType[]> {
@@ -16,26 +16,27 @@ export class SchemaService implements ISchemaService {
         statuses: type.statuses ? JSON.parse(type.statuses) : [],
         properties: props, 
         allowed_parent_types: allowedParents.map((p: any) => p.parent_type_id),
-        element_count: elementCount.count,
-        settings: type.settings ? JSON.parse(type.settings) : {}
+        element_count: elementCount.count
       };
     });
   }
 
-  async createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[], settings?: any }): Promise<number> {
-    const { name, description, statuses, color, icon, properties, allowed_parent_types, settings } = data;
+  async createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<number> {
+    const { name, description, statuses, color, icon, properties, allowed_parent_types } = data;
     const slug = slugify(name);
     
     const transaction = db.transaction(() => {
-      const typeId = db.prepare("INSERT INTO element_types (name, slug, description, statuses, color, icon, settings) VALUES (?, ?, ?, ?, ?, ?, ?)").run(name, slug, description, statuses ? JSON.stringify(statuses) : null, color || "#6366f1", icon || "Package", settings ? JSON.stringify(settings) : "{}").lastInsertRowid as number;
+      const typeId = db.prepare("INSERT INTO element_types (name, slug, description, statuses, color, icon) VALUES (?, ?, ?, ?, ?, ?)").run(name, slug, description, statuses ? JSON.stringify(statuses) : null, color || "#6366f1", icon || "Package").lastInsertRowid as number;
       const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
       for (const prop of properties) {
         insertProp.run(typeId, prop.table_name, prop.label);
       }
 
       if (allowed_parent_types && Array.isArray(allowed_parent_types)) {
+        const allowCircular = featureService.isFeatureEnabled("allow_schema_circular_dependencies");
+        
         for (const parentId of allowed_parent_types) {
-          if (parentId === typeId) throw new Error("A type cannot be its own parent.");
+          if (parentId === typeId && !allowCircular) throw new Error("A type cannot be its own parent.");
         }
         const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
         for (const parentId of allowed_parent_types) {
@@ -49,8 +50,8 @@ export class SchemaService implements ISchemaService {
     return transaction();
   }
 
-  async updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[], settings?: any }): Promise<void> {
-    const { name, description, statuses, color, icon, properties, allowed_parent_types, settings } = data;
+  async updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<void> {
+    const { name, description, statuses, color, icon, properties, allowed_parent_types } = data;
     const isId = /^\d+$/.test(idOrSlug);
 
     const type = db.prepare(`SELECT * FROM element_types WHERE ${isId ? "id" : "slug"} = ?`).get(idOrSlug) as any;
@@ -69,10 +70,8 @@ export class SchemaService implements ISchemaService {
       }
     }
 
-    const allowCircular = await configService.getConfigValue("allow_circular_dependency") === true;
-
     const transaction = db.transaction(() => {
-      db.prepare("UPDATE element_types SET name = ?, slug = ?, description = ?, statuses = ?, color = ?, icon = ?, settings = ? WHERE id = ?").run(name, slugify(name), description, statuses ? JSON.stringify(statuses) : null, color || "#6366f1", icon || "Package", settings ? JSON.stringify(settings) : "{}", type.id);
+      db.prepare("UPDATE element_types SET name = ?, slug = ?, description = ?, statuses = ?, color = ?, icon = ? WHERE id = ?").run(name, slugify(name), description, statuses ? JSON.stringify(statuses) : null, color || "#6366f1", icon || "Package", type.id);
       
       if (!hasElements) {
         db.prepare("DELETE FROM properties WHERE type_id = ?").run(type.id);
@@ -83,6 +82,8 @@ export class SchemaService implements ISchemaService {
       }
 
       if (allowed_parent_types && Array.isArray(allowed_parent_types)) {
+        const allowCircular = featureService.isFeatureEnabled("allow_schema_circular_dependencies");
+
         const checkCycle = (targetId: number, potentialParentId: number): boolean => {
           if (targetId === potentialParentId) return true;
           const parents = db.prepare("SELECT parent_type_id FROM type_hierarchy WHERE child_type_id = ?").all(potentialParentId) as any[];

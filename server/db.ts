@@ -18,8 +18,7 @@ export function initDb() {
       description TEXT,
       statuses TEXT, -- JSON array of strings
       color TEXT DEFAULT '#6366f1',
-      icon TEXT DEFAULT 'Package',
-      settings TEXT DEFAULT '{}' -- JSON unstructured data
+      icon TEXT DEFAULT 'Package'
     );
 
     CREATE TABLE IF NOT EXISTS properties (
@@ -109,6 +108,12 @@ export function initDb() {
       FOREIGN KEY (element_id) REFERENCES elements(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS color (
+      element_id INTEGER PRIMARY KEY,
+      hex TEXT NOT NULL,
+      FOREIGN KEY (element_id) REFERENCES elements(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -150,7 +155,6 @@ export function initDb() {
       google_id TEXT UNIQUE,
       role_id INTEGER NOT NULL,
       profile_element_id INTEGER,
-      settings TEXT DEFAULT '{}', -- JSON unstructured data
       FOREIGN KEY (role_id) REFERENCES roles(id),
       FOREIGN KEY (profile_element_id) REFERENCES elements(id) ON DELETE SET NULL
     );
@@ -196,10 +200,15 @@ export function initDb() {
       completed_at DATETIME
     );
 
-    CREATE TABLE IF NOT EXISTS system_config (
-      key TEXT PRIMARY KEY,
-      value TEXT, -- JSON
-      description TEXT
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL, -- JSON string
+      type_id INTEGER,
+      user_id INTEGER,
+      FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(key, type_id, user_id)
     );
 
     -- Trigger to automatically add default permissions for all roles when a new type is created
@@ -221,8 +230,6 @@ export function initDb() {
   try { db.exec("ALTER TABLE elements ADD COLUMN status TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE element_types ADD COLUMN color TEXT DEFAULT '#6366f1'"); } catch (e) {}
   try { db.exec("ALTER TABLE element_types ADD COLUMN icon TEXT DEFAULT 'Package'"); } catch (e) {}
-  try { db.exec("ALTER TABLE element_types ADD COLUMN settings TEXT DEFAULT '{}'"); } catch (e) {}
-  try { db.exec("ALTER TABLE users ADD COLUMN settings TEXT DEFAULT '{}'"); } catch (e) {}
   
   // Slug Migrations
   try { db.exec("ALTER TABLE element_types ADD COLUMN slug TEXT"); } catch (e) {}
@@ -300,16 +307,14 @@ export function initDb() {
     db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("editor", "editor@example.com", hashedPassword, editorRole);
     db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("viewer", "viewer@example.com", hashedPassword, viewerRole);
 
-    // Seed System Config
-    const insertConfig = db.prepare("INSERT OR IGNORE INTO system_config (key, value, description) VALUES (?, ?, ?)");
-    insertConfig.run("allow_circular_dependency", "false", "Allow circular dependencies in type hierarchy");
-    insertConfig.run("do_structure", "true", "Enable structure features");
-    insertConfig.run("dev_mode", "true", "Enable developer mode (always true)");
-
     const insertInteractionType = db.prepare("INSERT INTO interaction_types (name, icon, description) VALUES (?, ?, ?)");
     insertInteractionType.run("like", "Heart", "Users can like elements");
     insertInteractionType.run("favorite", "Star", "Users can favorite elements");
     insertInteractionType.run("comment", "MessageSquare", "Users can leave comments");
+
+    // Seed default settings
+    const defaultColors = JSON.stringify(["#6366f1", "#ec4899", "#f43f5e", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#71717a"]);
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("brand_color_presets", defaultColors);
 
     // Seed Sample Elements
     const articleId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Welcome to FlexCatalog", "welcome-to-flexcatalog", articleType).lastInsertRowid;
@@ -373,5 +378,25 @@ export function initDb() {
       const hashedPassword = bcrypt.hashSync("password123", 10);
       db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("viewer", "viewer@example.com", hashedPassword, viewerRole.id);
     }
+  }
+
+  // Ensure default settings exist
+  const colorSetting = db.prepare("SELECT id FROM settings WHERE key = ? AND type_id IS NULL AND user_id IS NULL").get("brand_color_presets");
+  if (!colorSetting) {
+    const defaultColors = JSON.stringify(["#6366f1", "#ec4899", "#f43f5e", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#71717a"]);
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("brand_color_presets", defaultColors);
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feature_switches (
+      name TEXT PRIMARY KEY,
+      enabled INTEGER DEFAULT 0
+    );
+  `);
+
+  // Seed feature switches
+  const circularDepSwitch = db.prepare("SELECT name FROM feature_switches WHERE name = ?").get("allow_schema_circular_dependencies");
+  if (!circularDepSwitch) {
+    db.prepare("INSERT INTO feature_switches (name, enabled) VALUES (?, ?)").run("allow_schema_circular_dependencies", 0);
   }
 }

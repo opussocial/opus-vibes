@@ -6,7 +6,10 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Element, ElementType, ElementDetail, TypePermission, User } from "../types";
 import { Badge } from "./common/Badge";
 
-import { IconRenderer } from "./common/IconRenderer";
+const IconRenderer = ({ name, size = 16, className = "" }: { name: string; size?: number; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent size={size} className={className} />;
+};
 
 interface ElementEditorProps {
   types: ElementType[];
@@ -28,6 +31,18 @@ export const ElementEditor = ({
   const navigate = useNavigate();
   const [editingElement, setEditingElement] = useState<ElementDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [colorPresets, setColorPresets] = useState<string[]>(["#6366f1", "#ec4899", "#f43f5e", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6", "#71717a"]);
+
+  useEffect(() => {
+    fetch("/api/settings/brand_color_presets")
+      .then(res => res.json())
+      .then(data => {
+        if (data.value) {
+          setColorPresets(data.value);
+        }
+      })
+      .catch(err => console.error("Error fetching color presets:", err));
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -449,47 +464,48 @@ export const ElementEditor = ({
                 </div>
               )}
 
-              {prop.table_name === "color_info" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-400 uppercase mb-1.5">Color Picker</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="color"
-                        disabled={!canEdit}
-                        value={editingElement.color_info?.hex || "#000000"}
-                        onChange={e => setEditingElement({
-                          ...editingElement,
-                          color_info: { ...editingElement.color_info, hex: e.target.value }
-                        })}
-                        className="w-12 h-12 p-1 bg-zinc-50 border border-zinc-200 rounded-xl cursor-pointer disabled:opacity-50"
-                      />
+              {prop.table_name === "color" && (
+                <div className="space-y-4">
+                  <div className="flex gap-4 items-center">
+                    <input 
+                      type="color"
+                      disabled={!canEdit}
+                      value={editingElement.color?.hex || "#000000"}
+                      onChange={e => setEditingElement({
+                        ...editingElement,
+                        color: { ...editingElement.color, hex: e.target.value }
+                      })}
+                      className="w-16 h-16 p-1 bg-zinc-50 border border-zinc-200 rounded-xl cursor-pointer disabled:opacity-50"
+                    />
+                    <div className="flex-1">
+                      <label className="block text-xs font-semibold text-zinc-400 uppercase mb-1.5">Hex Color</label>
                       <input 
                         type="text"
                         disabled={!canEdit}
-                        value={editingElement.color_info?.hex || "#000000"}
+                        value={editingElement.color?.hex || "#000000"}
                         onChange={e => setEditingElement({
                           ...editingElement,
-                          color_info: { ...editingElement.color_info, hex: e.target.value }
+                          color: { ...editingElement.color, hex: e.target.value }
                         })}
-                        className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all font-mono text-sm uppercase disabled:opacity-50"
+                        className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all font-mono uppercase disabled:opacity-50"
                         placeholder="#000000"
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-400 uppercase mb-1.5">Color Label</label>
-                    <input 
-                      type="text"
-                      disabled={!canEdit}
-                      value={editingElement.color_info?.label || ""}
-                      onChange={e => setEditingElement({
-                        ...editingElement,
-                        color_info: { ...editingElement.color_info, label: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all disabled:opacity-50"
-                      placeholder="e.g. Primary, Accent..."
-                    />
+                  <div className="flex flex-wrap gap-2">
+                    {colorPresets.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        disabled={!canEdit}
+                        onClick={() => setEditingElement({
+                          ...editingElement,
+                          color: { ...editingElement.color, hex: c }
+                        })}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${editingElement.color?.hex === c ? "border-zinc-900 scale-110" : "border-transparent hover:scale-110"} disabled:opacity-50`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
                   </div>
                 </div>
               )}

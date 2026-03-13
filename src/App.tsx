@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import * as LucideIcons from "lucide-react";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -14,12 +13,10 @@ import {
   LogOut,
   Activity,
   Menu,
-  HelpCircle,
-  Network
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
-import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge, SystemConfig, Permission } from "./types";
+import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge } from "./types";
 
 // --- Components ---
 import { AuthScreen } from "./components/AuthScreen";
@@ -33,12 +30,9 @@ import { Relationships } from "./components/Relationships";
 import { ElementEditor } from "./components/ElementEditor";
 import { ElementView } from "./components/ElementView";
 import { Profile } from "./components/Profile";
-import { SystemSettings } from "./components/SystemSettings";
-import { ElementBrowser } from "./components/ElementBrowser";
 import { TaskMonitor } from "./components/TaskMonitor";
 import { DefinitionManager } from "./components/DefinitionManager";
-
-import { IconRenderer } from "./components/common/IconRenderer";
+import { SettingsManager } from "./components/SettingsManager";
 
 export default function App() {
   const navigate = useNavigate();
@@ -50,7 +44,6 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [relTypes, setRelTypes] = useState<RelationshipType[]>([]);
   const [graph, setGraph] = useState<GraphEdge[]>([]);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -62,7 +55,6 @@ export default function App() {
     description: "", 
     properties: [], 
     allowed_parent_types: [], 
-    statuses: ["draft", "public"],
     color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`, 
     icon: "Package" 
   });
@@ -98,13 +90,12 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const [meRes, eRes, tRes, rtRes, gRes, cRes] = await Promise.all([
+      const [meRes, eRes, tRes, rtRes, gRes] = await Promise.all([
         fetch("/api/me"),
         fetch("/api/elements"),
         fetch("/api/types"),
         fetch("/api/relationship-types"),
-        fetch("/api/graph"),
-        fetch("/api/config")
+        fetch("/api/graph")
       ]);
       
       const user = await meRes.json();
@@ -116,7 +107,6 @@ export default function App() {
       setTypes(await tRes.json());
       setRelTypes(await rtRes.json());
       setGraph(await gRes.json());
-      setSystemConfig(await cRes.json());
 
       if (user.permissions.includes("manage_roles")) {
         const [rRes, uRes, pRes] = await Promise.all([
@@ -255,7 +245,6 @@ export default function App() {
       description: "", 
       properties: [],
       allowed_parent_types: [],
-      statuses: ["draft", "public"],
       color: "#6366f1",
       icon: "Package"
     });
@@ -371,7 +360,7 @@ export default function App() {
       if (p.table_name === "urls_embeds") defaults = { title: "Untitled Link" };
       if (p.table_name === "product_info") defaults = { currency: "USD", sku: "SKU-000" };
       if (p.table_name === "place") defaults = { address: "Untitled Location" };
-      if (p.table_name === "color_info") defaults = { hex: "#6366f1", label: "Primary Color" };
+      if (p.table_name === "color") defaults = { hex: "#6366f1" };
       initialData[p.table_name] = defaults;
     });
     setEditingElement(initialData);
@@ -451,12 +440,6 @@ export default function App() {
             to="/" 
           />
           <SidebarItem 
-            icon={Network} 
-            label="Browser" 
-            active={location.pathname === "/browser"} 
-            to="/browser" 
-          />
-          <SidebarItem 
             icon={Settings} 
             label="Schema Types" 
             active={location.pathname.startsWith("/types")} 
@@ -488,20 +471,28 @@ export default function App() {
               to="/tasks" 
             />
           )}
-          {hasPermission("manage_roles") && (
+          {hasPermission("manage_types") && (
             <SidebarItem 
               icon={Settings} 
-              label="System Settings" 
+              label="App Definition" 
+              active={location.pathname === "/definition"} 
+              to="/definition" 
+            />
+          )}
+          {hasPermission("manage_types") && (
+            <SidebarItem 
+              icon={Settings} 
+              label="Settings" 
               active={location.pathname === "/settings"} 
               to="/settings" 
             />
           )}
-          {hasPermission("manage_types") && systemConfig.find(c => c.key === "do_structure")?.value !== false && (
+          {hasPermission("manage_types") && (
             <SidebarItem 
-              icon={Activity} 
-              label="App Definition" 
-              active={location.pathname === "/definition"} 
-              to="/definition" 
+              icon={Shield} 
+              label="Feature Switches" 
+              active={location.pathname === "/features"} 
+              to="/features" 
             />
           )}
           {hasPermission("manage_roles") && (
@@ -557,12 +548,6 @@ export default function App() {
                 handleDelete={handleDelete}
               />
             } />
-            <Route path="/browser" element={
-              <ElementBrowser 
-                types={types}
-                relTypes={relTypes}
-              />
-            } />
             <Route path="/elements/new" element={
               <ElementEditor 
                 types={types}
@@ -611,7 +596,6 @@ export default function App() {
                 newRole={newRole}
                 setNewRole={setNewRole}
                 handleCreateRole={handleCreateRole}
-                types={types}
               />
             } />
             <Route path="/relationships/*" element={
@@ -643,8 +627,22 @@ export default function App() {
               <Profile user={currentUser} />
             } />
             <Route path="/tasks" element={<TaskMonitor />} />
-            <Route path="/settings" element={<SystemSettings />} />
             <Route path="/definition" element={<DefinitionManager />} />
+            <Route path="/settings" element={
+              <SettingsManager 
+                types={types} 
+                currentUser={currentUser} 
+                hasPermission={hasPermission} 
+              />
+            } />
+            <Route path="/features" element={
+              <SettingsManager 
+                types={types} 
+                currentUser={currentUser} 
+                hasPermission={hasPermission} 
+                initialScope="features"
+              />
+            } />
           </Routes>
         </AnimatePresence>
       </main>
@@ -675,12 +673,7 @@ export default function App() {
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
                     >
-                      <div 
-                        className="w-6 h-6 rounded flex items-center justify-center text-white shadow-sm"
-                        style={{ backgroundColor: t.color || "#6366f1" }}
-                      >
-                        <IconRenderer name={t.icon || "Package"} size={12} />
-                      </div>
+                      <div className="w-2 h-2 rounded-full bg-zinc-200" />
                       {t.name}
                     </button>
                   );
@@ -710,12 +703,7 @@ export default function App() {
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
                     >
-                      <div 
-                        className="w-6 h-6 rounded flex items-center justify-center text-white shadow-sm"
-                        style={{ backgroundColor: t.color || "#6366f1" }}
-                      >
-                        <IconRenderer name={t.icon || "Package"} size={12} />
-                      </div>
+                      <div className="w-2 h-2 rounded-full bg-zinc-200" />
                       {t.name}
                     </button>
                   );
