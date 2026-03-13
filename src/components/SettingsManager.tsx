@@ -70,6 +70,15 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
   }, [scope, selectedTypeId, selectedUserId]);
 
   const toggleFeature = async (name: string, current: boolean) => {
+    // Validation for homepage_enabled
+    if (name === "homepage_enabled" && current === true) {
+      const homeElement = settings["home_element"];
+      if (!homeElement) {
+        alert("Cannot disable default homepage unless 'home_element' is set in Global settings.");
+        return;
+      }
+    }
+
     try {
       const res = await fetch(`/api/features/${name}`, {
         method: "POST",

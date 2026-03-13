@@ -8,6 +8,7 @@ import { Interactions } from "./Interactions";
 import { Badge } from "./common/Badge";
 
 import { IconRenderer } from "./common/IconRenderer";
+import { ElementRenderer } from "../theme/ElementRenderer";
 
 interface ElementViewProps {
   currentUser: User | null;
@@ -26,6 +27,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
   const [showAddEdge, setShowAddEdge] = useState(false);
   const [newEdge, setNewEdge] = useState<{ rel_type_id?: number; target_el_id?: number }>({});
   const [allElements, setAllElements] = useState<Element[]>([]);
+  const [isPublicView, setIsPublicView] = useState(false);
 
   const fetchElementData = async () => {
     if (!slug) return;
@@ -98,6 +100,18 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
   }
 
   if (!element) return null;
+  if (isPublicView && slug) return (
+    <div className="relative">
+      <button 
+        onClick={() => setIsPublicView(false)}
+        className="fixed top-8 right-8 z-50 px-4 py-2 bg-marine text-brand-yellow rounded-xl font-bold shadow-2xl hover:bg-marine-light transition-all flex items-center gap-2"
+      >
+        <LucideIcons.Settings size={16} />
+        Back to Admin
+      </button>
+      <ElementRenderer slug={slug} />
+    </div>
+  );
 
   const allowedChildTypes = types.filter(t => t.allowed_parent_types?.includes(element.type_id));
   const availableRelTypes = relTypes.filter(rt => rt.source_type_id === element.type_id);
@@ -132,12 +146,21 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
             </div>
           </div>
         </div>
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 hover:bg-zinc-100 text-zinc-400 rounded-xl transition-colors"
-        >
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsPublicView(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-all"
+          >
+            <LucideIcons.Eye size={16} />
+            Public View
+          </button>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 hover:bg-zinc-100 text-zinc-400 rounded-xl transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 p-8">

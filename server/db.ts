@@ -399,4 +399,9 @@ export function initDb() {
   if (!circularDepSwitch) {
     db.prepare("INSERT INTO feature_switches (name, enabled) VALUES (?, ?)").run("allow_schema_circular_dependencies", 0);
   }
+
+  const homepageSwitch = db.prepare("SELECT name FROM feature_switches WHERE name = ?").get("homepage_enabled");
+  if (!homepageSwitch) {
+    db.prepare("INSERT INTO feature_switches (name, enabled) VALUES (?, ?)").run("homepage_enabled", 1);
+  }
 }

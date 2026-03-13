@@ -18,6 +18,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge } from "./types";
 
+// --- Theme ---
+import { ThemeEngine } from "./theme/ThemeEngine";
+
 // --- Components ---
 import { AuthScreen } from "./components/AuthScreen";
 import { SidebarItem } from "./components/common/SidebarItem";
@@ -45,6 +48,8 @@ export default function App() {
   const [relTypes, setRelTypes] = useState<RelationshipType[]>([]);
   const [graph, setGraph] = useState<GraphEdge[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+  const [settings, setSettings] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -90,12 +95,14 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const [meRes, eRes, tRes, rtRes, gRes] = await Promise.all([
+      const [meRes, eRes, tRes, rtRes, gRes, fRes, sRes] = await Promise.all([
         fetch("/api/me"),
         fetch("/api/elements"),
         fetch("/api/types"),
         fetch("/api/relationship-types"),
-        fetch("/api/graph")
+        fetch("/api/graph"),
+        fetch("/api/features"),
+        fetch("/api/settings")
       ]);
       
       const user = await meRes.json();
@@ -107,6 +114,8 @@ export default function App() {
       setTypes(await tRes.json());
       setRelTypes(await rtRes.json());
       setGraph(await gRes.json());
+      setFeatures(await fRes.json());
+      setSettings(await sRes.json());
 
       if (user.permissions.includes("manage_roles")) {
         const [rRes, uRes, pRes] = await Promise.all([
@@ -541,7 +550,9 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes location={location}>
             <Route path="/" element={
-              <Dashboard 
+              <ThemeEngine 
+                features={features}
+                settings={settings}
                 elements={elements}
                 types={types}
                 getTypePermission={getTypePermission}
@@ -596,6 +607,7 @@ export default function App() {
                 newRole={newRole}
                 setNewRole={setNewRole}
                 handleCreateRole={handleCreateRole}
+                types={types}
               />
             } />
             <Route path="/relationships/*" element={

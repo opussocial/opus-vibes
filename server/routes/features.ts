@@ -1,6 +1,7 @@
 import express from "express";
 import { featureService } from "../services/FeatureService";
 import { requireAuth } from "../middleware";
+import { db } from "../db";
 
 const router = express.Router();
 
@@ -22,6 +23,14 @@ router.post("/features/:name", requireAuth, async (req: any, res) => {
   }
 
   try {
+    if (name === "enable_homepage" && enabled === false) {
+      // Check for home_element setting
+      const setting = db.prepare("SELECT value FROM settings WHERE key = 'home_element' AND type_id IS NULL AND user_id IS NULL").get() as { value: string } | undefined;
+      if (!setting) {
+        return res.status(400).json({ error: "Cannot disable homepage without a 'home_element' setting defined." });
+      }
+    }
+
     await featureService.setFeatureEnabled(name, enabled);
     res.json({ success: true });
   } catch (err: any) {
