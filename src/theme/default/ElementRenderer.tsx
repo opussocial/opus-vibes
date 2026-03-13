@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Element, ElementDetail, ElementType } from "../types";
+import { Element, ElementDetail, ElementType } from "../../types";
 import { themeUtils } from "./utils";
 import { motion } from "motion/react";
 import { Database, ArrowLeft } from "lucide-react";

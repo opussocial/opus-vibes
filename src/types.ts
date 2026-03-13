@@ -6,6 +6,7 @@ export interface ElementType {
   statuses?: string[]; // Possible statuses for elements of this type
   color?: string;
   icon?: string;
+  settings?: any;
   properties: Property[];
   allowed_parent_types?: number[];
   element_count?: number;
@@ -62,6 +63,14 @@ export interface User {
   profile_element_id?: number;
   permissions: string[];
   type_permissions: TypePermission[];
+  settings?: any;
+}
+
+export interface SystemConfig {
+  key: string;
+  value: any;
+  description?: string;
+  group?: string;
 }
 
 export interface TypePermission {

@@ -4,7 +4,7 @@ import { settingsService } from "../services";
 
 const router = express.Router();
 
-router.get("/settings", requireAuth, async (req: any, res) => {
+router.get("/settings", async (req: any, res) => {
   const { type_id, user_id } = req.query;
   try {
     const settings = await settingsService.getSettings({ 
@@ -17,7 +17,7 @@ router.get("/settings", requireAuth, async (req: any, res) => {
   }
 });
 
-router.get("/settings/:key", requireAuth, async (req: any, res) => {
+router.get("/settings/:key", async (req: any, res) => {
   const { key } = req.params;
   const { type_id, user_id } = req.query;
   try {

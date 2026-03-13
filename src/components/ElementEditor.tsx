@@ -54,11 +54,11 @@ export const ElementEditor = ({
             const data = await res.json();
             setEditingElement(data);
           } else {
-            navigate("/");
+            navigate("/admin");
           }
         } catch (err) {
           console.error(err);
-          navigate("/");
+          navigate("/admin");
         }
       } else {
         // Creating new
@@ -78,7 +78,7 @@ export const ElementEditor = ({
             updated_at: ""
           } as ElementDetail);
         } else {
-          navigate("/");
+          navigate("/admin");
         }
       }
       setLoading(false);
@@ -102,7 +102,7 @@ export const ElementEditor = ({
 
   const onSave = async (e: React.FormEvent) => {
     await handleSave(e, editingElement);
-    navigate("/");
+    navigate("/admin");
   };
 
   return (

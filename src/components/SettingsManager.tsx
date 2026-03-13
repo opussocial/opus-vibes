@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { 
   Settings, Plus, Trash2, Globe, User, Database, Eye, X, Save, 
-  AlertCircle, ChevronRight, Info, Search, Filter, Activity, ToggleLeft, ToggleRight, Shield
+  AlertCircle, ChevronRight, Info, Search, Filter, Activity, ToggleLeft, ToggleRight, Shield, Palette
 } from "lucide-react";
 import { ElementType, User as UserType } from "../types";
 import { Badge } from "./common/Badge";
@@ -220,6 +220,52 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
           </button>
         )}
       </div>
+
+      {scope === "global" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <Palette className="text-marine" size={24} />
+              <h3 className="text-lg font-bold">Active Theme</h3>
+            </div>
+            <p className="text-sm text-zinc-500">Select the active theme for your public catalog.</p>
+            <div className="flex gap-3">
+              <select
+                value={settings["active_theme"] || "default"}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  await fetch(`/api/settings/active_theme`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ value: val })
+                  });
+                  fetchSettings();
+                }}
+                className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/5 font-bold text-marine"
+              >
+                <option value="default">Default Theme (Modern)</option>
+                {/* Future themes can be added here */}
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <Globe className="text-marine" size={24} />
+              <h3 className="text-lg font-bold">Home Element</h3>
+            </div>
+            <p className="text-sm text-zinc-500">The element displayed on the root URL.</p>
+            <div className="flex gap-3">
+              <input 
+                type="text"
+                value={settings["home_element"] || ""}
+                readOnly
+                className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-500 font-mono text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       {scope === "type" && (

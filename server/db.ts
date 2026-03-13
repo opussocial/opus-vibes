@@ -18,7 +18,8 @@ export function initDb() {
       description TEXT,
       statuses TEXT, -- JSON array of strings
       color TEXT DEFAULT '#6366f1',
-      icon TEXT DEFAULT 'Package'
+      icon TEXT DEFAULT 'Package',
+      settings TEXT -- JSON object
     );
 
     CREATE TABLE IF NOT EXISTS properties (
@@ -230,6 +231,7 @@ export function initDb() {
   try { db.exec("ALTER TABLE elements ADD COLUMN status TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE element_types ADD COLUMN color TEXT DEFAULT '#6366f1'"); } catch (e) {}
   try { db.exec("ALTER TABLE element_types ADD COLUMN icon TEXT DEFAULT 'Package'"); } catch (e) {}
+  try { db.exec("ALTER TABLE element_types ADD COLUMN settings TEXT"); } catch (e) {}
   
   // Slug Migrations
   try { db.exec("ALTER TABLE element_types ADD COLUMN slug TEXT"); } catch (e) {}
@@ -403,5 +405,10 @@ export function initDb() {
   const homepageSwitch = db.prepare("SELECT name FROM feature_switches WHERE name = ?").get("homepage_enabled");
   if (!homepageSwitch) {
     db.prepare("INSERT INTO feature_switches (name, enabled) VALUES (?, ?)").run("homepage_enabled", 1);
+  }
+
+  const activeThemeSetting = db.prepare("SELECT id FROM settings WHERE key = ? AND type_id IS NULL AND user_id IS NULL").get("active_theme");
+  if (!activeThemeSetting) {
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("active_theme", JSON.stringify("default"));
   }
 }

@@ -8,7 +8,7 @@ import { Interactions } from "./Interactions";
 import { Badge } from "./common/Badge";
 
 import { IconRenderer } from "./common/IconRenderer";
-import { ElementRenderer } from "../theme/ElementRenderer";
+import { ElementRenderer } from "../theme/default/ElementRenderer";
 
 interface ElementViewProps {
   currentUser: User | null;
@@ -51,11 +51,11 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
         setEdges(await gRes.json());
         setAllElements(await eRes.json());
       } else {
-        navigate("/");
+        navigate("/admin");
       }
     } catch (err) {
       console.error(err);
-      navigate("/");
+      navigate("/admin");
     } finally {
       setLoading(false);
     }
@@ -178,7 +178,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                   <p className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Parent Element</p>
                   {parent ? (
                     <Link 
-                      to={`/elements/${parent.slug}`}
+                      to={`/admin/elements/${parent.slug}`}
                       className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200 hover:border-zinc-400 transition-all group"
                     >
                       <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                       {allowedChildTypes.map(t => (
                         <button
                           key={t.id}
-                          onClick={() => navigate(`/elements/new?type=${t.slug}&parent=${element.id}`)}
+                          onClick={() => navigate(`/admin/elements/new?type=${t.slug}&parent=${element.id}`)}
                           className="flex items-center gap-1.5 px-2 py-1 bg-marine text-brand-yellow rounded-lg text-[10px] font-bold hover:bg-marine-light transition-all shadow-sm"
                         >
                           <Plus size={10} />
@@ -223,7 +223,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                       {children.map(child => (
                         <Link 
                           key={child.id}
-                          to={`/elements/${child.slug}`}
+                          to={`/admin/elements/${child.slug}`}
                           className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200 hover:border-zinc-400 transition-all group"
                         >
                           <div className="flex items-center gap-3">
@@ -351,7 +351,7 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
                                 {isSource ? "Target" : "Source"}
                               </p>
                               {otherSlug ? (
-                                <Link to={`/elements/${otherSlug}`} className="text-sm font-bold hover:underline">
+                                <Link to={`/admin/elements/${otherSlug}`} className="text-sm font-bold hover:underline">
                                   {otherName}
                                 </Link>
                               ) : (

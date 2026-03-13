@@ -131,7 +131,7 @@ export const SchemaTypes = ({
                           <button 
                             onClick={() => {
                               setNewType(type);
-                              navigate(`/types/${type.slug}/edit`);
+                              navigate(`/admin/types/${type.slug}/edit`);
                             }}
                             className="p-1 hover:bg-marine/5 text-zinc-300 hover:text-marine rounded transition-colors"
                           >
@@ -309,7 +309,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
       <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
         <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
         <button 
-          onClick={() => navigate("/types")} 
+          onClick={() => navigate("/admin/types")} 
           className="p-2 hover:bg-zinc-200 rounded-full transition-colors"
         >
           <X size={24} />
@@ -570,7 +570,7 @@ const TypeForm = ({ title, buttonText, onSubmit, newType, setNewType, types, tog
         <div className="pt-8 border-t border-zinc-100 flex gap-4">
           <button 
             type="button"
-            onClick={() => navigate("/types")}
+            onClick={() => navigate("/admin/types")}
             className="flex-1 px-6 py-4 bg-white border border-zinc-200 rounded-xl font-bold text-zinc-600 hover:bg-zinc-50 transition-all"
           >
             Cancel

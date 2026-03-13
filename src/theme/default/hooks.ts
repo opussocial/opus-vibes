@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Element, ElementDetail } from "../types";
+import { Element, ElementDetail } from "../../types";
 import { themeUtils } from "./utils";
 
 export const useTheme = () => {

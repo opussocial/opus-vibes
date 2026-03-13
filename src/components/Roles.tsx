@@ -48,7 +48,7 @@ export const Roles = ({
               </div>
               {hasPermission("manage_roles") && (
                 <button 
-                  onClick={() => navigate("/roles/new")}
+                  onClick={() => navigate("/admin/roles/new")}
                   className="px-8 py-4 bg-marine text-brand-yellow rounded-2xl font-bold hover:bg-marine-light transition-all flex items-center gap-3 shadow-lg"
                 >
                   <Plus size={24} />
@@ -70,7 +70,7 @@ export const Roles = ({
             <DataTable 
               type="roles"
               data={roles}
-              onEdit={(role) => navigate(`/roles/${role.slug}`)}
+              onEdit={(role) => navigate(`/admin/roles/${role.slug}`)}
             />
           </motion.div>
         } />
@@ -84,7 +84,7 @@ export const Roles = ({
             <div className="p-10 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
               <h2 className="text-3xl font-bold tracking-tight text-marine">Create New Role</h2>
               <button 
-                onClick={() => navigate("/roles")} 
+                onClick={() => navigate("/admin/roles")} 
                 className="p-3 hover:bg-zinc-200 rounded-2xl transition-colors"
               >
                 <X size={28} />
@@ -118,7 +118,7 @@ export const Roles = ({
               <div className="pt-10 border-t border-zinc-100 flex gap-6">
                 <button 
                   type="button"
-                  onClick={() => navigate("/roles")}
+                  onClick={() => navigate("/admin/roles")}
                   className="flex-1 px-8 py-5 bg-white border border-zinc-200 rounded-2xl font-bold text-zinc-600 hover:bg-zinc-50 transition-all text-lg"
                 >
                   Cancel
@@ -174,7 +174,7 @@ const RolePermissionsEditor = ({ roles, allPermissions, hasPermission, updateRol
           <p className="text-zinc-500 text-lg">{role.description}</p>
         </div>
         <button 
-          onClick={() => navigate("/roles")} 
+          onClick={() => navigate("/admin/roles")} 
           className="p-4 hover:bg-zinc-200 rounded-2xl transition-colors shadow-sm"
         >
           <X size={32} />
@@ -263,7 +263,7 @@ const RolePermissionsEditor = ({ roles, allPermissions, hasPermission, updateRol
       
       <div className="p-10 bg-zinc-50 border-t border-zinc-100 flex justify-end">
         <button 
-          onClick={() => navigate("/roles")}
+          onClick={() => navigate("/admin/roles")}
           className="px-10 py-5 bg-marine text-brand-yellow rounded-2xl font-bold hover:bg-marine-light transition-all shadow-xl text-lg"
         >
           Done

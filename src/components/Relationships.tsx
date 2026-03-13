@@ -182,7 +182,7 @@ export const Relationships = ({
             <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-marine">
               <h2 className="text-2xl font-bold tracking-tight text-white">Define Relationship Type</h2>
               <button 
-                onClick={() => navigate("/relationships")} 
+                onClick={() => navigate("/admin/relationships")} 
                 className="p-2 hover:bg-white/10 text-white rounded-full transition-colors"
               >
                 <X size={24} />
@@ -227,7 +227,7 @@ export const Relationships = ({
 
               <div className="pt-8 border-t border-zinc-100 flex gap-4">
                 <button 
-                  onClick={() => navigate("/relationships")}
+                  onClick={() => navigate("/admin/relationships")}
                   className="flex-1 px-6 py-4 bg-white border border-zinc-200 rounded-xl font-bold text-zinc-600 hover:bg-zinc-50 transition-all"
                 >
                   Cancel
@@ -253,7 +253,7 @@ export const Relationships = ({
             <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-marine">
               <h2 className="text-2xl font-bold tracking-tight text-white">Link Elements</h2>
               <button 
-                onClick={() => navigate("/relationships")} 
+                onClick={() => navigate("/admin/relationships")} 
                 className="p-2 hover:bg-white/10 text-white rounded-full transition-colors"
               >
                 <X size={24} />
@@ -303,7 +303,7 @@ export const Relationships = ({
 
               <div className="pt-8 border-t border-zinc-100 flex gap-4">
                 <button 
-                  onClick={() => navigate("/relationships")}
+                  onClick={() => navigate("/admin/relationships")}
                   className="flex-1 px-6 py-4 bg-white border border-zinc-200 rounded-xl font-bold text-zinc-600 hover:bg-zinc-50 transition-all"
                 >
                   Cancel

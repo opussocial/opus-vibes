@@ -1,40 +1,42 @@
 import React from "react";
-import { Dashboard } from "../components/Dashboard";
-import { ElementRenderer } from "./ElementRenderer";
-import { Element, ElementType, TypePermission } from "../types";
+import { Routes, Route } from "react-router-dom";
+import { User } from "../types";
 
-interface ThemeEngineProps {
-  features: Record<string, boolean>;
-  settings: Record<string, any>;
-  elements: Element[];
-  types: ElementType[];
-  getTypePermission: (typeId: number) => TypePermission;
-  handleDelete: (slug: string) => void;
+// Import themes
+import * as DefaultTheme from "./default/Home";
+import * as DefaultElementPage from "./default/ElementPage";
+
+interface ThemeComponents {
+  Home: React.ComponentType<any>;
+  ElementPage: React.ComponentType<any>;
 }
 
-export const ThemeEngine = ({
-  features,
-  settings,
-  elements,
-  types,
-  getTypePermission,
-  handleDelete
-}: ThemeEngineProps) => {
-  const homepageEnabled = features["homepage_enabled"] !== false; // Default to true if not present
-  const homeElementSlug = settings["home_element"];
-
-  // If homepage is disabled AND we have a home_element slug, render that element
-  if (!homepageEnabled && homeElementSlug) {
-    return <ElementRenderer slug={homeElementSlug} isHome={true} />;
+const THEME_REGISTRY: Record<string, ThemeComponents> = {
+  default: {
+    Home: DefaultTheme.Home,
+    ElementPage: DefaultElementPage.ElementPage,
   }
+};
 
-  // Otherwise, render the default Dashboard
+export const ThemeEngine = ({ 
+  currentUser, 
+  onLogout, 
+  settings 
+}: { 
+  currentUser: User | null, 
+  onLogout: () => void,
+  settings: Record<string, any>
+}) => {
+  const activeThemeName = settings.active_theme || "default";
+  const theme = THEME_REGISTRY[activeThemeName] || THEME_REGISTRY.default;
+
+  const { Home, ElementPage } = theme;
+
   return (
-    <Dashboard 
-      elements={elements}
-      types={types}
-      getTypePermission={getTypePermission}
-      handleDelete={handleDelete}
-    />
+    <Routes>
+      <Route path="/" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
+      <Route path="/e/:slug" element={<ElementPage currentUser={currentUser} onLogout={onLogout} />} />
+      <Route path="*" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
+    </Routes>
   );
 };

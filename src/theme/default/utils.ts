@@ -1,4 +1,4 @@
-import { Element, ElementDetail } from "../types";
+import { Element, ElementDetail } from "../../types";
 
 /**
  * Utility functions for use in element templates

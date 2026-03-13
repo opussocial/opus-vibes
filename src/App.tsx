@@ -78,6 +78,18 @@ export default function App() {
     init();
   }, []);
 
+  // Pick a random element slug and set it in settings if not set
+  useEffect(() => {
+    if (elements.length > 0 && !settings["home_element"] && currentUser?.permissions.includes("manage_types")) {
+      const randomElement = elements[Math.floor(Math.random() * elements.length)];
+      fetch(`/api/settings/home_element`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: randomElement.slug })
+      }).then(() => fetchData());
+    }
+  }, [elements, settings, currentUser]);
+
   useEffect(() => {
     setIsSidebarOpen(false);
     setIsFabOpen(false);
@@ -108,14 +120,15 @@ export default function App() {
       const user = await meRes.json();
       setCurrentUser(user);
       
+      setFeatures(await fRes.json());
+      setSettings(await sRes.json());
+
       if (!user) return;
 
       setElements(await eRes.json());
       setTypes(await tRes.json());
       setRelTypes(await rtRes.json());
       setGraph(await gRes.json());
-      setFeatures(await fRes.json());
-      setSettings(await sRes.json());
 
       if (user.permissions.includes("manage_roles")) {
         const [rRes, uRes, pRes] = await Promise.all([
@@ -183,7 +196,7 @@ export default function App() {
     if (res.ok) {
       setNewRole({ name: "Untitled Role", description: "" });
       await fetchData();
-      navigate("/roles");
+      navigate("/admin/roles");
     }
   };
 
@@ -202,7 +215,7 @@ export default function App() {
     if (res.ok) {
       setNewRelType({});
       await fetchData();
-      navigate("/relationships");
+      navigate("/admin/relationships");
     }
   };
 
@@ -220,7 +233,7 @@ export default function App() {
     if (res.ok) {
       setNewEdge({});
       await fetchData();
-      navigate("/relationships");
+      navigate("/admin/relationships");
     }
   };
 
@@ -258,7 +271,7 @@ export default function App() {
       icon: "Package"
     });
     await fetchData();
-    navigate("/types");
+    navigate("/admin/types");
   };
 
   const handleUpdateType = async (e: React.FormEvent) => {
@@ -285,7 +298,7 @@ export default function App() {
         icon: "Package"
       });
       await fetchData();
-      navigate("/types");
+      navigate("/admin/types");
     } else {
       const data = await res.json();
       alert(data.error || "Failed to update type");
@@ -376,6 +389,8 @@ export default function App() {
     setIsCreating(true);
   };
 
+  const isAdminPath = location.pathname.startsWith("/admin");
+
   if (loading) {
     return (
       <div className="h-screen bg-white flex items-center justify-center">
@@ -387,34 +402,30 @@ export default function App() {
     );
   }
 
+  if (!isAdminPath) {
+    return <ThemeEngine currentUser={currentUser} onLogout={handleLogout} settings={settings} />;
+  }
+
   if (!currentUser) {
     return <AuthScreen onLogin={() => {
       fetchData();
     }} />;
   }
 
-  const isElementView = location.pathname.startsWith("/elements/") && !location.pathname.endsWith("/edit") && location.pathname !== "/elements/new";
-  const currentElementSlug = isElementView ? location.pathname.split("/")[2] : null;
+  const isElementView = location.pathname.startsWith("/admin/elements/") && !location.pathname.endsWith("/edit") && location.pathname !== "/admin/elements/new";
+  const currentElementSlug = isElementView ? location.pathname.split("/")[3] : null;
   const currentElement = elements.find(e => e.slug === currentElementSlug);
   const allowedChildTypes = currentElement ? types.filter(t => t.allowed_parent_types?.includes(currentElement.type_id)) : [];
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-white text-zinc-900 font-sans overflow-hidden">
-      {/* Mobile Header */}
-      <header className="md:hidden bg-white border-b border-zinc-100 p-4 flex items-center justify-between z-40">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-marine rounded-lg flex items-center justify-center text-brand-yellow">
-            <Database size={18} />
-          </div>
-          <h1 className="text-lg font-bold tracking-tight text-marine">FlexCatalog</h1>
-        </div>
-        <button 
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 hover:bg-zinc-50 rounded-lg text-zinc-500"
-        >
-          <Menu size={24} />
-        </button>
-      </header>
+      {/* Mobile Menu Trigger (Floating) */}
+      <button 
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="fixed top-4 left-4 z-40 p-3 bg-white border border-zinc-200 rounded-2xl shadow-lg text-marine md:hidden"
+      >
+        <Menu size={24} />
+      </button>
 
       {/* Sidebar Overlay */}
       <AnimatePresence>
@@ -441,75 +452,75 @@ export default function App() {
           <h1 className="text-xl font-bold tracking-tight text-marine">FlexCatalog</h1>
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-2 flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <SidebarItem 
             icon={LayoutDashboard} 
             label="Elements" 
-            active={location.pathname === "/"} 
-            to="/" 
+            active={location.pathname === "/admin"} 
+            to="/admin" 
           />
           <SidebarItem 
             icon={Settings} 
             label="Schema Types" 
-            active={location.pathname.startsWith("/types")} 
-            to="/types" 
+            active={location.pathname.startsWith("/admin/types")} 
+            to="/admin/types" 
           />
           <SidebarItem 
             icon={Shield} 
             label="Roles" 
-            active={location.pathname.startsWith("/roles")} 
-            to="/roles" 
+            active={location.pathname.startsWith("/admin/roles")} 
+            to="/admin/roles" 
           />
           <SidebarItem 
             icon={LinkIcon} 
             label="Relationships" 
-            active={location.pathname.startsWith("/relationships")} 
-            to="/relationships" 
+            active={location.pathname.startsWith("/admin/relationships")} 
+            to="/admin/relationships" 
           />
           <SidebarItem 
             icon={UserIcon} 
             label="My Profile" 
-            active={location.pathname === "/profile"} 
-            to="/profile" 
+            active={location.pathname === "/admin/profile"} 
+            to="/admin/profile" 
           />
           {hasPermission("manage_roles") && (
             <SidebarItem 
               icon={Activity} 
               label="Tasks" 
-              active={location.pathname === "/tasks"} 
-              to="/tasks" 
+              active={location.pathname === "/admin/tasks"} 
+              to="/admin/tasks" 
             />
           )}
           {hasPermission("manage_types") && (
             <SidebarItem 
               icon={Settings} 
               label="App Definition" 
-              active={location.pathname === "/definition"} 
-              to="/definition" 
+              active={location.pathname === "/admin/definition"} 
+              to="/admin/definition" 
             />
           )}
           {hasPermission("manage_types") && (
             <SidebarItem 
               icon={Settings} 
               label="Settings" 
-              active={location.pathname === "/settings"} 
-              to="/settings" 
+              active={location.pathname === "/admin/settings"} 
+              to="/admin/settings" 
             />
           )}
           {hasPermission("manage_types") && (
             <SidebarItem 
               icon={Shield} 
               label="Feature Switches" 
-              active={location.pathname === "/features"} 
-              to="/features" 
+              active={location.pathname === "/admin/features"} 
+              to="/admin/features" 
             />
           )}
           {hasPermission("manage_roles") && (
             <SidebarItem 
               icon={Users} 
               label="Users" 
-              active={location.pathname === "/users"} 
-              to="/users" 
+              active={location.pathname === "/admin/users"} 
+              to="/admin/users" 
             />
           )}
         </nav>
@@ -518,7 +529,7 @@ export default function App() {
           <div className="p-4 bg-marine rounded-2xl text-white shadow-xl shadow-marine/10">
             <div className="flex items-center justify-between mb-4">
               <Link 
-                to="/profile"
+                to="/admin/profile"
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
               >
                 <div className="w-8 h-8 bg-marine-light rounded-full flex items-center justify-center text-brand-yellow">
@@ -549,17 +560,15 @@ export default function App() {
       <main className="flex-1 overflow-y-auto p-4 md:p-10">
         <AnimatePresence mode="wait">
           <Routes location={location}>
-            <Route path="/" element={
-              <ThemeEngine 
-                features={features}
-                settings={settings}
+            <Route path="/admin" element={
+              <Dashboard 
                 elements={elements}
                 types={types}
                 getTypePermission={getTypePermission}
                 handleDelete={handleDelete}
               />
             } />
-            <Route path="/elements/new" element={
+            <Route path="/admin/elements/new" element={
               <ElementEditor 
                 types={types}
                 elements={elements}
@@ -568,14 +577,14 @@ export default function App() {
                 fetchData={fetchData}
               />
             } />
-            <Route path="/elements/:slug" element={
+            <Route path="/admin/elements/:slug" element={
               <ElementView 
                 currentUser={currentUser} 
                 types={types}
                 relTypes={relTypes}
               />
             } />
-            <Route path="/elements/:slug/edit" element={
+            <Route path="/admin/elements/:slug/edit" element={
               <ElementEditor 
                 types={types}
                 elements={elements}
@@ -584,7 +593,7 @@ export default function App() {
                 fetchData={fetchData}
               />
             } />
-            <Route path="/types/*" element={
+            <Route path="/admin/types/*" element={
               <SchemaTypes 
                 types={types}
                 hasPermission={hasPermission}
@@ -597,7 +606,7 @@ export default function App() {
                 MODULAR_TABLES={MODULAR_TABLES}
               />
             } />
-            <Route path="/roles/*" element={
+            <Route path="/admin/roles/*" element={
               <Roles 
                 roles={roles}
                 allPermissions={allPermissions}
@@ -610,7 +619,7 @@ export default function App() {
                 types={types}
               />
             } />
-            <Route path="/relationships/*" element={
+            <Route path="/admin/relationships/*" element={
               <Relationships 
                 relTypes={relTypes}
                 graph={graph}
@@ -627,7 +636,7 @@ export default function App() {
                 createEdge={createEdge}
               />
             } />
-            <Route path="/users" element={
+            <Route path="/admin/users" element={
               <UsersScreen 
                 users={users}
                 roles={roles}
@@ -635,19 +644,19 @@ export default function App() {
                 updateUserRole={updateUserRole}
               />
             } />
-            <Route path="/profile" element={
+            <Route path="/admin/profile" element={
               <Profile user={currentUser} />
             } />
-            <Route path="/tasks" element={<TaskMonitor />} />
-            <Route path="/definition" element={<DefinitionManager />} />
-            <Route path="/settings" element={
+            <Route path="/admin/tasks" element={<TaskMonitor />} />
+            <Route path="/admin/definition" element={<DefinitionManager />} />
+            <Route path="/admin/settings" element={
               <SettingsManager 
                 types={types} 
                 currentUser={currentUser} 
                 hasPermission={hasPermission} 
               />
             } />
-            <Route path="/features" element={
+            <Route path="/admin/features" element={
               <SettingsManager 
                 types={types} 
                 currentUser={currentUser} 
@@ -660,10 +669,10 @@ export default function App() {
       </main>
 
       {/* FAB Button */}
-      {((["/", "/types", "/relationships", "/roles"].some(path => location.pathname === path)) || (isElementView && allowedChildTypes.length > 0)) && (
+      {((["/admin", "/admin/types", "/admin/relationships", "/admin/roles"].some(path => location.pathname === path)) || (isElementView && allowedChildTypes.length > 0)) && (
         <div className="fixed bottom-8 right-8 z-40">
           <AnimatePresence>
-            {location.pathname === "/" && isFabOpen && (
+            {location.pathname === "/admin" && isFabOpen && (
               <motion.div
                 initial={{ opacity: 0, y: 10, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -680,7 +689,7 @@ export default function App() {
                     <button
                       key={t.id}
                       onClick={() => {
-                        navigate(`/elements/new?type=${t.slug}`);
+                        navigate(`/admin/elements/new?type=${t.slug}`);
                         setIsFabOpen(false);
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
@@ -710,7 +719,7 @@ export default function App() {
                     <button
                       key={t.id}
                       onClick={() => {
-                        navigate(`/elements/new?type=${t.slug}&parent=${currentElement?.id}`);
+                        navigate(`/admin/elements/new?type=${t.slug}&parent=${currentElement?.id}`);
                         setIsFabOpen(false);
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-black transition-colors flex items-center gap-3"
@@ -726,14 +735,14 @@ export default function App() {
 
           <button
             onClick={() => {
-              if (location.pathname === "/" || isElementView) {
+              if (location.pathname === "/admin" || isElementView) {
                 setIsFabOpen(!isFabOpen);
-              } else if (location.pathname === "/types") {
-                navigate("/types/new");
-              } else if (location.pathname === "/relationships") {
-                navigate("/relationships/type/new");
-              } else if (location.pathname === "/roles") {
-                navigate("/roles/new");
+              } else if (location.pathname === "/admin/types") {
+                navigate("/admin/types/new");
+              } else if (location.pathname === "/admin/relationships") {
+                navigate("/admin/relationships/type/new");
+              } else if (location.pathname === "/admin/roles") {
+                navigate("/admin/roles/new");
               }
             }}
             className="w-14 h-14 bg-brand-yellow text-marine rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group border-4 border-white"
@@ -741,7 +750,7 @@ export default function App() {
             <Plus size={24} className={`transition-transform duration-300 ${isFabOpen ? 'rotate-45' : ''}`} />
             
             <div className="absolute right-full mr-4 px-3 py-1.5 bg-marine text-white text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-widest shadow-lg">
-              {location.pathname === "/" ? "Add Element" : isElementView ? "Add Child" : location.pathname === "/types" ? "Add Schema Type" : location.pathname === "/relationships" ? "Add Relationship" : location.pathname === "/roles" ? "Add Role" : "Quick Add"}
+              {location.pathname === "/admin" ? "Add Element" : isElementView ? "Add Child" : location.pathname === "/admin/types" ? "Add Schema Type" : location.pathname === "/admin/relationships" ? "Add Relationship" : location.pathname === "/admin/roles" ? "Add Role" : "Quick Add"}
             </div>
           </button>
         </div>

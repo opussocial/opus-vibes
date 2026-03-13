@@ -10,8 +10,8 @@ export interface IAuthService {
 
 export interface ISchemaService {
   getTypes(): Promise<ElementType[]>;
-  createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<number>;
-  updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, properties: any[], allowed_parent_types?: number[] }): Promise<void>;
+  createType(data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, settings?: any, properties: any[], allowed_parent_types?: number[] }): Promise<number>;
+  updateType(idOrSlug: string, data: { name: string, description: string, statuses?: string[], color?: string, icon?: string, settings?: any, properties: any[], allowed_parent_types?: number[] }): Promise<void>;
   deleteType(idOrSlug: string): Promise<void>;
   getRelationshipTypes(): Promise<RelationshipType[]>;
   createRelationshipType(data: { source_type_id: number, target_type_id: number, name: string }): Promise<number>;

@@ -49,8 +49,8 @@ export const Dashboard = ({
         <DataTable 
           type="elements"
           data={elements}
-          onView={(el) => navigate(`/elements/${el.slug}`)}
-          onEdit={(el) => navigate(`/elements/${el.slug}/edit`)}
+          onView={(el) => navigate(`/admin/elements/${el.slug}`)}
+          onEdit={(el) => navigate(`/admin/elements/${el.slug}/edit`)}
           onDelete={(el) => handleDelete(el.slug)}
         />
       ) : (
