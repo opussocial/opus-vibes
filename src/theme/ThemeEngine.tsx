@@ -5,6 +5,10 @@ import { User } from "../types";
 // Import themes
 import * as DefaultTheme from "./default/Home";
 import * as DefaultElementPage from "./default/ElementPage";
+import * as TailwindTheme from "./tailwind/Home";
+import * as TailwindElementPage from "./tailwind/ElementPage";
+import * as BootstrapTheme from "./bootstrap/Home";
+import * as BootstrapElementPage from "./bootstrap/ElementPage";
 
 interface ThemeComponents {
   Home: React.ComponentType<any>;
@@ -15,6 +19,14 @@ const THEME_REGISTRY: Record<string, ThemeComponents> = {
   default: {
     Home: DefaultTheme.Home,
     ElementPage: DefaultElementPage.ElementPage,
+  },
+  tailwind: {
+    Home: TailwindTheme.Home,
+    ElementPage: TailwindElementPage.ElementPage,
+  },
+  bootstrap: {
+    Home: BootstrapTheme.Home,
+    ElementPage: BootstrapElementPage.ElementPage,
   }
 };
 

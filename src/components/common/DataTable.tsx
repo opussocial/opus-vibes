@@ -18,7 +18,7 @@ interface DataTableProps<T> {
 
 export const DataTable = <T extends { id: number | string }>({ 
   type, 
-  data, 
+  data = [], 
   onEdit, 
   onDelete, 
   onView,
@@ -28,9 +28,10 @@ export const DataTable = <T extends { id: number | string }>({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
 
-  const totalPages = Math.ceil(data.length / pageSize);
+  const safeData = Array.isArray(data) ? data : [];
+  const totalPages = Math.ceil(safeData.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedData = data.slice(startIndex, startIndex + pageSize);
+  const paginatedData = safeData.slice(startIndex, startIndex + pageSize);
 
   const toggleSelectAll = () => {
     if (selectedIds.size === paginatedData.length && paginatedData.length > 0) {
@@ -264,7 +265,7 @@ export const DataTable = <T extends { id: number | string }>({
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between px-10 py-6 bg-white rounded-[2rem] border border-zinc-200 shadow-xl gap-6">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em]">
-            Showing <span className="text-marine">{startIndex + 1}</span> to <span className="text-marine">{Math.min(startIndex + pageSize, data.length)}</span> of <span className="text-marine">{data.length}</span> entities
+            Showing <span className="text-marine">{startIndex + 1}</span> to <span className="text-marine">{Math.min(startIndex + pageSize, safeData.length)}</span> of <span className="text-marine">{safeData.length}</span> entities
           </p>
           <div className="flex items-center gap-3">
             <button 

@@ -244,7 +244,8 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
                 className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/5 font-bold text-marine"
               >
                 <option value="default">Default Theme (Modern)</option>
-                {/* Future themes can be added here */}
+                <option value="tailwind">Tailwind Theme (SaaS)</option>
+                <option value="bootstrap">Bootstrap Theme (Classic)</option>
               </select>
             </div>
           </div>
