@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, Database, Calendar, Tag, Share2, MoreHorizontal, ChevronRight, ArrowRight } from "lucide-react";
+import { ArrowLeft, Database, Calendar, Tag, Share2, MoreHorizontal, ChevronRight, ArrowRight, Heart, MessageSquare, Eye, User as UserIcon } from "lucide-react";
 import { ElementDetail, User } from "../../types";
 import { themeUtils } from "./utils";
 
@@ -78,7 +78,40 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
                 <Calendar size={18} className="text-indigo-600" />
                 <span className="text-sm font-medium">{new Date(element.created_at).toLocaleDateString()}</span>
               </div>
+              {element.interactions && (
+                <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <Heart size={16} className="text-rose-500" />
+                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name === 'Like').length}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <MessageSquare size={16} className="text-indigo-500" />
+                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name === 'Comment').length}</span>
+                  </div>
+                </div>
+              )}
             </div>
+            
+            {/* Tags from Graph */}
+            {element.graph && element.graph.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-8">
+                {element.graph.map(edge => {
+                  const isSource = edge.source_el_id === element.id;
+                  const otherName = isSource ? edge.target_name : edge.source_name;
+                  const otherSlug = isSource ? edge.target_slug : edge.source_slug;
+                  return (
+                    <Link 
+                      key={edge.id}
+                      to={`/e/${otherSlug}`}
+                      className="px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2"
+                    >
+                      <span className="opacity-50 font-medium">{edge.rel_name}:</span>
+                      {otherName}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Content Grid */}
@@ -104,12 +137,38 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
                 </div>
               </section>
 
+              {/* Interactions Section */}
+              {element.interactions && element.interactions.length > 0 && (
+                <section className="bg-white rounded-[2rem] p-10 border border-slate-200 shadow-sm">
+                  <h3 className="text-xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                    <div className="w-2 h-8 bg-indigo-600 rounded-full" />
+                    Interactions
+                  </h3>
+                  <div className="space-y-6">
+                    {element.interactions.filter(i => i.content).map(interaction => (
+                      <div key={interaction.id} className="flex gap-4">
+                        <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 shrink-0">
+                          <UserIcon size={20} />
+                        </div>
+                        <div className="flex-grow">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-slate-900">{interaction.username}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(interaction.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-slate-600 leading-relaxed">{interaction.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Relationships */}
-              {element.children.length > 0 && (
+              {element.children && element.children.length > 0 && (
                 <section>
                   <h3 className="text-xl font-bold text-slate-900 mb-6">Sub-elements</h3>
                   <div className="grid grid-cols-1 gap-4">
-                    {element.children.map(child => (
+                    {element.children.map((child) => (
                       <Link 
                         key={child.id} 
                         to={`/e/${child.slug}`}

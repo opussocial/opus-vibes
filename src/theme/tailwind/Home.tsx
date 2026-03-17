@@ -1,17 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Database, Layers, Zap, Shield, LogOut, User as UserIcon, ExternalLink } from "lucide-react";
+import { ArrowRight, Database, Layers, Zap, Shield, LogOut, User as UserIcon, ExternalLink, Heart, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Element, User } from "../../types";
 import { themeUtils } from "./utils";
 
 export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
-  const [featuredElements, setFeaturedElements] = useState<Element[]>([]);
+  const [featuredElements, setFeaturedElements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      const elements = await themeUtils.getElementsByType("Publication");
-      setFeaturedElements(elements.slice(0, 3));
+      setLoading(true);
+      const topLevel = await themeUtils.getTopLevelElements();
+      
+      // Fetch details for each top-level element to get content/descriptions
+      const detailedElements = await Promise.all(
+        topLevel.map(async (el) => {
+          const detail = await themeUtils.getElementBySlug(el.slug);
+          return detail || el;
+        })
+      );
+      
+      setFeaturedElements(detailedElements);
+      setLoading(false);
     };
     loadData();
   }, []);
@@ -136,21 +148,28 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
         </section>
 
         {/* Catalog Preview */}
-        {featuredElements.length > 0 && (
-          <section className="px-8 py-24">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex items-center justify-between mb-12">
-                <h2 className="text-3xl font-bold text-slate-900">Public Catalog</h2>
-                <Link to="/admin" className="text-indigo-600 font-bold flex items-center gap-2 hover:gap-3 transition-all">
-                  View All <ArrowRight size={18} />
-                </Link>
+        <section className="px-8 py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-12">
+              <h2 className="text-3xl font-bold text-slate-900">Featured Publications & Businesses</h2>
+              <Link to="/admin" className="text-indigo-600 font-bold flex items-center gap-2 hover:gap-3 transition-all">
+                Manage Catalog <ArrowRight size={18} />
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse" />
+                ))}
               </div>
+            ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {featuredElements.map(el => (
                   <Link 
                     key={el.id} 
                     to={`/e/${el.slug}`}
-                    className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-indigo-600 transition-all hover:shadow-2xl hover:shadow-indigo-600/5"
+                    className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-indigo-600 transition-all hover:shadow-2xl hover:shadow-indigo-600/5 flex flex-col"
                   >
                     <div className="flex items-center justify-between mb-6">
                       <div className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
@@ -159,19 +178,31 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
                       <ExternalLink size={16} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
                     </div>
                     <h4 className="text-xl font-bold text-slate-900 mb-2">{el.name}</h4>
-                    <p className="text-slate-500 text-sm mb-6 line-clamp-2">
-                      Explore the details of this {el.type_name.toLowerCase()} in our catalog.
+                    <p className="text-slate-500 text-sm mb-6 line-clamp-3 flex-grow">
+                      {el.content?.body || `Explore the details of this ${el.type_name.toLowerCase()} in our catalog.`}
                     </p>
                     <div className="h-px w-full bg-slate-100 mb-6" />
-                    <div className="flex items-center gap-2 text-sm font-bold text-indigo-600">
-                      View Details
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-bold text-indigo-600">
+                        View Details
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+                          <Heart size={14} className="text-rose-500" />
+                          {el.interactions?.filter((i: any) => i.type_name === 'Like').length || 0}
+                        </div>
+                        <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+                          <MessageSquare size={14} className="text-indigo-500" />
+                          {el.interactions?.filter((i: any) => i.type_name === 'Comment').length || 0}
+                        </div>
+                      </div>
                     </div>
                   </Link>
                 ))}
               </div>
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
       </main>
 
       <footer className="px-8 py-16 border-t border-slate-200 bg-white">

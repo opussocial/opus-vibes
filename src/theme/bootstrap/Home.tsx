@@ -6,12 +6,24 @@ import { Element, User } from "../../types";
 import { themeUtils } from "./utils";
 
 export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
-  const [featuredElements, setFeaturedElements] = useState<Element[]>([]);
+  const [featuredElements, setFeaturedElements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      const elements = await themeUtils.getElementsByType("Publication");
-      setFeaturedElements(elements.slice(0, 3));
+      setLoading(true);
+      const topLevel = await themeUtils.getTopLevelElements();
+      
+      // Fetch details for each top-level element to get content/descriptions
+      const detailedElements = await Promise.all(
+        topLevel.map(async (el) => {
+          const detail = await themeUtils.getElementBySlug(el.slug);
+          return detail || el;
+        })
+      );
+      
+      setFeaturedElements(detailedElements);
+      setLoading(false);
     };
     loadData();
   }, []);
@@ -106,20 +118,31 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
       </section>
 
       {/* Featured Cards */}
-      {featuredElements.length > 0 && (
-        <section className="py-20 bg-[#f8f9fa]">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-light text-[#212529] mb-12 text-center">Featured Catalog</h2>
+      <section className="py-20 bg-[#f8f9fa]">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-light text-[#212529] mb-12 text-center">Featured Catalog</h2>
+          
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white border border-zinc-200 rounded shadow-sm h-64 animate-pulse" />
+              ))}
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {featuredElements.map(el => (
                 <div key={el.id} className="bg-white border border-zinc-200 rounded shadow-sm overflow-hidden flex flex-col">
                   <div className="h-48 bg-zinc-200 flex items-center justify-center text-zinc-400">
-                    <Database size={48} />
+                    {el.file?.url ? (
+                      <img src={el.file.url} alt={el.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Database size={48} />
+                    )}
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
                     <h5 className="text-xl font-medium text-[#212529] mb-2">{el.name}</h5>
-                    <p className="text-[#6c757d] text-sm mb-4 flex-1">
-                      Some quick example text to build on the card title and make up the bulk of the card's content.
+                    <p className="text-[#6c757d] text-sm mb-4 flex-1 line-clamp-3">
+                      {el.content?.body || "Explore the details of this item in our catalog."}
                     </p>
                     <div className="flex items-center justify-between mt-auto">
                       <Link 
@@ -128,15 +151,15 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
                       >
                         View Details
                       </Link>
-                      <small className="text-[#6c757d] uppercase font-bold text-[10px]">{el.type_name}</small>
+                      <span className="badge bg-secondary text-white uppercase font-bold text-[10px] px-2 py-1 rounded">{el.type_name}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-200">

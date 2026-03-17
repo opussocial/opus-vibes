@@ -296,6 +296,46 @@ export function initDb() {
     const authorType = insertType.run("Author", "author", "A person who writes books", "User", "#22c55e").lastInsertRowid;
     insertProp.run(authorType, "content", "Biography");
 
+    // --- Art Gallery Types ---
+    const galleryType = insertType.run("Art Gallery", "art-gallery", "A space for the exhibition of art", "Image", "#db2777").lastInsertRowid;
+    insertProp.run(galleryType, "content", "Gallery Mission");
+    insertProp.run(galleryType, "place", "Location");
+
+    const exhibitionType = insertType.run("Exhibition", "exhibition", "A public display of art or items", "Palette", "#be185d").lastInsertRowid;
+    insertProp.run(exhibitionType, "content", "Exhibition Theme");
+    insertProp.run(exhibitionType, "time_tracking", "Duration");
+
+    const artworkType = insertType.run("Artwork", "artwork", "A single piece of art", "Frame", "#9d174d").lastInsertRowid;
+    insertProp.run(artworkType, "content", "Artist Statement");
+    insertProp.run(artworkType, "file", "Image of Work");
+    insertProp.run(artworkType, "product_info", "Price & Availability");
+
+    // --- Music Studio Types ---
+    const studioType = insertType.run("Music Studio", "music-studio", "A facility for sound recording and mixing", "Mic2", "#2563eb").lastInsertRowid;
+    insertProp.run(studioType, "content", "Studio Gear & Bio");
+    insertProp.run(studioType, "place", "Location");
+
+    const sessionType = insertType.run("Recording Session", "recording-session", "A scheduled time for recording", "Clock", "#1d4ed8").lastInsertRowid;
+    insertProp.run(sessionType, "time_tracking", "Session Time");
+    insertProp.run(sessionType, "content", "Session Notes");
+
+    const trackType = insertType.run("Track", "track", "A single musical recording", "Music", "#1e40af").lastInsertRowid;
+    insertProp.run(trackType, "content", "Lyrics/Notes");
+    insertProp.run(trackType, "file", "Audio Preview");
+
+    // --- Creative Agency Types ---
+    const agencyType = insertType.run("Creative Agency", "creative-agency", "A business providing creative services", "Briefcase", "#4f46e5").lastInsertRowid;
+    insertProp.run(agencyType, "content", "Agency Bio");
+    insertProp.run(agencyType, "place", "Headquarters");
+
+    const projectType = insertType.run("Project", "project", "A specific creative project", "ClipboardList", "#4338ca").lastInsertRowid;
+    insertProp.run(projectType, "content", "Project Scope");
+    insertProp.run(projectType, "time_tracking", "Timeline");
+
+    const assetType = insertType.run("Asset", "asset", "A creative deliverable", "FileImage", "#3730a3").lastInsertRowid;
+    insertProp.run(assetType, "file", "File");
+    insertProp.run(assetType, "content", "Asset Description");
+
     // --- Screenwriting Types ---
     const storyType = insertType.run("Story", "story", "A narrative or screenplay project", "Clapperboard", "#7c3aed").lastInsertRowid;
     insertProp.run(storyType, "content", "Logline & Synopsis");
@@ -325,6 +365,18 @@ export function initDb() {
     // Bookstore Hierarchy
     insertHierarchy.run(bookstoreType, bookType); // bookstore > book
     insertHierarchy.run(bookstoreType, authorType); // bookstore > author (as contributors)
+
+    // Art Gallery Hierarchy
+    insertHierarchy.run(galleryType, exhibitionType); // gallery > exhibition
+    insertHierarchy.run(exhibitionType, artworkType); // exhibition > artwork
+
+    // Music Studio Hierarchy
+    insertHierarchy.run(studioType, sessionType); // studio > session
+    insertHierarchy.run(sessionType, trackType);   // session > track
+
+    // Creative Agency Hierarchy
+    insertHierarchy.run(agencyType, projectType); // agency > project
+    insertHierarchy.run(projectType, assetType);  // project > asset
 
     // Screenwriting Hierarchy
     insertHierarchy.run(storyType, chapterType);   // story > chapter
@@ -391,6 +443,45 @@ export function initDb() {
     db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(book1Id, "A 1925 novel by American writer F. Scott Fitzgerald. Set in the Jazz Age on Long Island.");
     db.prepare("INSERT INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(book1Id, "RARE-GATSBY-01", 1250.00, "GBP", 1);
 
+    // --- Art Gallery Seeds ---
+    const galleryId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("The Prism Gallery", "prism-gallery", galleryType).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(galleryId, "A contemporary art space dedicated to showcasing emerging digital and physical artists.");
+    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(galleryId, 40.7128, -74.0060, "Chelsea, New York, NY");
+
+    const exhibitionId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Digital Horizons", "digital-horizons", exhibitionType, galleryId).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(exhibitionId, "An exploration of how AI and generative tools are reshaping the landscape of modern art.");
+    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(exhibitionId, "2026-04-01 10:00:00", "2026-05-31 18:00:00");
+
+    const artworkId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Latent Dreams #4", "latent-dreams-4", artworkType, exhibitionId).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(artworkId, "A large-scale generative piece exploring the subconscious of a neural network trained on classical landscapes.");
+    db.prepare("INSERT INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(artworkId, "ART-LD-04", 4500.00, "USD", 1);
+    db.prepare("INSERT INTO file (element_id, filename, url, mime_type) VALUES (?, ?, ?, ?)").run(artworkId, "latent-dreams.jpg", "https://picsum.photos/seed/art/1200/800", "image/jpeg");
+
+    // --- Music Studio Seeds ---
+    const studioId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Echo Chamber Studios", "echo-chamber-studios", studioType).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(studioId, "State-of-the-art recording facility specializing in analog warmth and modern precision.");
+    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(studioId, 34.0522, -118.2437, "Hollywood, Los Angeles, CA");
+
+    const sessionId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("The Midnight Session", "midnight-session", sessionType, studioId).lastInsertRowid;
+    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(sessionId, "2026-03-20 22:00:00", "2026-03-21 04:00:00");
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(sessionId, "Vocal tracking for the upcoming 'Neon Shadows' soundtrack.");
+
+    const trackId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Cyberpunk Lullaby", "cyberpunk-lullaby", trackType, sessionId).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(trackId, "A haunting synth-driven track with ethereal vocals. Key: Cm, BPM: 85.");
+
+    // --- Creative Agency Seeds ---
+    const agencyId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Vanguard Creative", "vanguard-creative", agencyType).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(agencyId, "A full-service creative agency specializing in brand identity and digital storytelling.");
+    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(agencyId, 37.7749, -122.4194, "Market St, San Francisco, CA");
+
+    const projectId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Rebrand 2026", "rebrand-2026", projectType, agencyId).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(projectId, "A complete visual overhaul for a major fintech startup.");
+    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(projectId, "2026-01-01 09:00:00", "2026-06-30 17:00:00");
+
+    const assetId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("New Logo Concept", "new-logo-concept", assetType, projectId).lastInsertRowid;
+    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(assetId, "A minimalist geometric logo representing growth and stability.");
+    db.prepare("INSERT INTO file (element_id, filename, url, mime_type) VALUES (?, ?, ?, ?)").run(assetId, "logo-v1.png", "https://picsum.photos/seed/logo/400/400", "image/png");
+
     // --- Screenwriting Seeds ---
     const storyId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Neon Shadows", "neon-shadows", storyType).lastInsertRowid;
     db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(storyId, "In a rain-soaked cyberpunk future, a low-level data courier discovers a secret that could topple the mega-corporations.");
@@ -403,6 +494,40 @@ export function initDb() {
 
     const sceneId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Scene 1: The Alleyway", "scene-1-alleyway", sceneType, chapId).lastInsertRowid;
     db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(sceneId, "EXT. ALLEYWAY - NIGHT\n\nRain hammers against the rusted dumpsters. JAX (30s) waits, checking his internal clock. The neon sign above flickers: 'OPEN'.");
+
+    // --- Showcase Content: Tags, Interactions, and User ---
+    
+    // 1. Interaction Types
+    const likeTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("Like", "Heart", "User likes the element").lastInsertRowid;
+    const commentTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("Comment", "MessageSquare", "User commented on the element").lastInsertRowid;
+    const viewTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("View", "Eye", "User viewed the element").lastInsertRowid;
+
+    // 2. Showcase User
+    const showcaseUserId = db.prepare("INSERT OR IGNORE INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("creative_pro", "pro@creative.com", bcrypt.hashSync("password123", 10), viewerRole.id).lastInsertRowid;
+
+    // 3. Tags as Element Type
+    const tagType = db.prepare("INSERT OR IGNORE INTO element_types (name, slug, description, icon, color) VALUES (?, ?, ?, ?, ?)").run("Tag", "tag", "Categorization tags", "Tag", "#10b981").lastInsertRowid;
+    
+    // 4. Create some Tags
+    const tagInspiration = db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Inspiration", "tag-inspiration", tagType).lastInsertRowid;
+    const tagProcess = db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Process", "tag-process", tagType).lastInsertRowid;
+    const tagFeatured = db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Featured", "tag-featured", tagType).lastInsertRowid;
+
+    // 5. Link Tags to Elements (using graph_edges)
+    // We need a relationship type first
+    const tagRelId = db.prepare("INSERT OR IGNORE INTO graph_relationship_types (source_type_id, target_type_id, name) VALUES (?, ?, ?)").run(tagType, artworkType, "Categorizes").lastInsertRowid;
+    if (tagRelId && tagFeatured && artworkId) {
+      db.prepare("INSERT OR IGNORE INTO graph_edges (rel_type_id, source_el_id, target_el_id) VALUES (?, ?, ?)").run(tagRelId, tagFeatured, artworkId);
+    }
+
+    // 6. Add some Interactions
+    if (showcaseUserId && artworkId) {
+      const actualLikeType = db.prepare("SELECT id FROM interaction_types WHERE name = 'Like'").get() as any;
+      const actualCommentType = db.prepare("SELECT id FROM interaction_types WHERE name = 'Comment'").get() as any;
+      
+      db.prepare("INSERT INTO interactions (element_id, user_id, type_id) VALUES (?, ?, ?)").run(artworkId, showcaseUserId, actualLikeType.id);
+      db.prepare("INSERT INTO interactions (element_id, user_id, type_id, content) VALUES (?, ?, ?, ?)").run(artworkId, showcaseUserId, actualCommentType.id, "This is absolutely stunning! The latent space interpretation is spot on.");
+    }
   }
 
   // Ensure Profile type exists

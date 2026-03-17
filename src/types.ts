@@ -51,6 +51,17 @@ export interface GraphEdge {
 }
 
 export interface ElementDetail extends Element {
+  properties: { id: number; key: string; value: any }[];
+  children: Element[];
+  content?: { body: string };
+  place?: { latitude: number; longitude: number; address: string };
+  file?: { filename: string; url: string; mime_type: string };
+  urls_embeds?: { url: string; title: string; embed_code: string };
+  time_tracking?: { start_time: string; end_time: string; duration: number };
+  product_info?: { sku: string; price: number; currency: string; stock: number };
+  color?: { hex: string };
+  interactions: Interaction[];
+  graph: (GraphEdge & { source_slug: string; target_slug: string })[];
   [key: string]: any; // Modular data tables
 }
 

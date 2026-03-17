@@ -6,12 +6,24 @@ import { Element, User } from "../../types";
 import { themeUtils } from "./utils";
 
 export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
-  const [featuredElements, setFeaturedElements] = useState<Element[]>([]);
+  const [featuredElements, setFeaturedElements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      const elements = await themeUtils.getElementsByType("Product"); // Example type
-      setFeaturedElements(elements.slice(0, 3));
+      setLoading(true);
+      const topLevel = await themeUtils.getTopLevelElements();
+      
+      // Fetch details for each top-level element to get content/descriptions
+      const detailedElements = await Promise.all(
+        topLevel.map(async (el) => {
+          const detail = await themeUtils.getElementBySlug(el.slug);
+          return detail || el;
+        })
+      );
+      
+      setFeaturedElements(detailedElements);
+      setLoading(false);
     };
     loadData();
   }, []);
@@ -130,41 +142,48 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
       </section>
 
       {/* Featured Elements */}
-      {featuredElements.length > 0 && (
-        <section className="py-32">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-end justify-between mb-16">
-              <div>
-                <h2 className="text-4xl font-black text-marine tracking-tight">Featured Elements</h2>
-                <p className="text-zinc-500 mt-2">Discover the latest additions to our catalog.</p>
-              </div>
-              <Link to="/admin" className="text-marine font-bold hover:underline flex items-center gap-2">
-                View All <ArrowRight size={16} />
-              </Link>
+      <section className="py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-end justify-between mb-16">
+            <div>
+              <h2 className="text-4xl font-black text-marine tracking-tight">Featured Publications & Businesses</h2>
+              <p className="text-zinc-500 mt-2">Discover the latest additions to our catalog.</p>
             </div>
+            <Link to="/admin" className="text-marine font-bold hover:underline flex items-center gap-2">
+              Manage Catalog <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-64 bg-zinc-50 rounded-3xl animate-pulse" />
+              ))}
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {featuredElements.map((el) => (
                 <Link 
                   key={el.id} 
                   to={`/e/${el.slug}`}
-                  className="group bg-white border border-zinc-100 rounded-3xl p-8 hover:shadow-2xl hover:border-marine/10 transition-all"
+                  className="group bg-white border border-zinc-100 rounded-3xl p-8 hover:shadow-2xl hover:border-marine/10 transition-all flex flex-col"
                 >
                   <div className="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 mb-6 group-hover:bg-marine group-hover:text-brand-yellow transition-colors">
                     <Database size={24} />
                   </div>
                   <h4 className="text-xl font-bold text-marine mb-2">{el.name}</h4>
-                  <p className="text-zinc-500 text-sm line-clamp-2 mb-6">
-                    Explore the details and relationships of this {el.type_name.toLowerCase()}.
+                  <p className="text-zinc-500 text-sm line-clamp-3 mb-6 flex-grow">
+                    {el.content?.body || `Explore the details and relationships of this ${el.type_name.toLowerCase()}.`}
                   </p>
-                  <div className="flex items-center gap-2 text-sm font-bold text-marine group-hover:gap-4 transition-all">
+                  <div className="flex items-center gap-2 text-sm font-bold text-marine group-hover:gap-4 transition-all mt-auto">
                     Learn More <ArrowRight size={16} />
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-marine py-20 text-white">

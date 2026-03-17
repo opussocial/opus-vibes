@@ -47,5 +47,20 @@ export const themeUtils = {
       console.error(`Error fetching elements by type: ${typeSlug}`, err);
       return [];
     }
+  },
+
+  /**
+   * Get all top-level elements (no parent)
+   */
+  async getTopLevelElements(): Promise<Element[]> {
+    try {
+      const res = await fetch("/api/elements");
+      if (!res.ok) return [];
+      const elements: Element[] = await res.json();
+      return elements.filter(el => !el.parent_id);
+    } catch (err) {
+      console.error("Error fetching top-level elements", err);
+      return [];
+    }
   }
 };

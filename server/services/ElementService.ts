@@ -46,6 +46,27 @@ export class ElementService implements IElementService {
       const tableData = db.prepare(`SELECT * FROM ${prop.table_name} WHERE element_id = ?`).get(element.id);
       data[prop.table_name] = tableData || {};
     }
+
+    // Include interactions
+    data.interactions = db.prepare(`
+      SELECT i.*, it.name as type_name, it.icon as type_icon, u.username
+      FROM interactions i
+      JOIN interaction_types it ON i.type_id = it.id
+      JOIN users u ON i.user_id = u.id
+      WHERE i.element_id = ?
+      ORDER BY i.created_at DESC
+    `).all(element.id);
+
+    // Include graph edges (relationships/tags)
+    data.graph = db.prepare(`
+      SELECT ge.*, grt.name as rel_name, se.name as source_name, se.slug as source_slug, te.name as target_name, te.slug as target_slug
+      FROM graph_edges ge
+      JOIN graph_relationship_types grt ON ge.rel_type_id = grt.id
+      JOIN elements se ON ge.source_el_id = se.id
+      JOIN elements te ON ge.target_el_id = te.id
+      WHERE ge.source_el_id = ? OR ge.target_el_id = ?
+    `).all(element.id, element.id);
+
     return data;
   }
 
