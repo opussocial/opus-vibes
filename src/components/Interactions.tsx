@@ -50,16 +50,16 @@ export const Interactions = ({ elementId, currentUser }: InteractionsProps) => {
     if (res.ok) fetchData();
   };
 
-  const likes = interactions.filter(i => i.type_name === "like");
-  const favorites = interactions.filter(i => i.type_name === "favorite");
-  const comments = interactions.filter(i => i.type_name === "comment");
+  const likes = interactions.filter(i => i.type_name.toLowerCase() === "like");
+  const favorites = interactions.filter(i => i.type_name.toLowerCase() === "favorite");
+  const comments = interactions.filter(i => i.type_name.toLowerCase() === "comment");
 
   const hasLiked = likes.some(l => l.user_id === currentUser.id);
   const hasFavorited = favorites.some(f => f.user_id === currentUser.id);
 
-  const likeType = types.find(t => t.name === "like");
-  const favType = types.find(t => t.name === "favorite");
-  const commentType = types.find(t => t.name === "comment");
+  const likeType = types.find(t => t.name.toLowerCase() === "like");
+  const favType = types.find(t => t.name.toLowerCase() === "favorite");
+  const commentType = types.find(t => t.name.toLowerCase() === "comment");
 
   return (
     <div className="space-y-6">

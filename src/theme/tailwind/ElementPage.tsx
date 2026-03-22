@@ -82,11 +82,11 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
                 <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <Heart size={16} className="text-rose-500" />
-                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name === 'Like').length}</span>
+                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name.toLowerCase() === 'like').length}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <MessageSquare size={16} className="text-indigo-500" />
-                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name === 'Comment').length}</span>
+                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name.toLowerCase() === 'comment').length}</span>
                   </div>
                 </div>
               )}

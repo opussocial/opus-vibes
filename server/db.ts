@@ -383,9 +383,19 @@ export function initDb() {
     insertHierarchy.run(chapterType, sceneType);   // chapter > scene
     insertHierarchy.run(storyType, characterType); // story > character
 
-    const adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
-    const editorRole = db.prepare("SELECT id FROM roles WHERE slug = 'editor'").get() as any;
-    const viewerRole = db.prepare("SELECT id FROM roles WHERE slug = 'viewer'").get() as any;
+    // Ensure basic roles exist
+    let adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
+    if (!adminRole) {
+      adminRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Super Admin", "super-admin", "Full system access").lastInsertRowid };
+    }
+    let editorRole = db.prepare("SELECT id FROM roles WHERE slug = 'editor'").get() as any;
+    if (!editorRole) {
+      editorRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Editor", "editor", "Can manage content").lastInsertRowid };
+    }
+    let viewerRole = db.prepare("SELECT id FROM roles WHERE slug = 'viewer'").get() as any;
+    if (!viewerRole) {
+      viewerRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Viewer", "viewer", "Can only view content").lastInsertRowid };
+    }
 
     const types = db.prepare("SELECT id FROM element_types").all() as any[];
     for (const t of types) {
@@ -551,12 +561,11 @@ export function initDb() {
   // Ensure at least one admin exists
   const adminCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Super Admin'").get() as { count: number };
   if (adminCount.count === 0) {
-    let adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
-    if (!adminRole) {
-      adminRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Super Admin", "super-admin", "Full system access").lastInsertRowid };
+    const adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
+    if (adminRole) {
+      const hashedPassword = bcrypt.hashSync("password123", 10);
+      db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole.id);
     }
-    const hashedPassword = bcrypt.hashSync("password123", 10);
-    db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole.id);
   }
 
   // Ensure Editor exists

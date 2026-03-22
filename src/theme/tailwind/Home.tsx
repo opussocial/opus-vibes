@@ -189,11 +189,11 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
                           <Heart size={14} className="text-rose-500" />
-                          {el.interactions?.filter((i: any) => i.type_name === 'Like').length || 0}
+                          {el.interactions?.filter((i: any) => i.type_name.toLowerCase() === 'like').length || 0}
                         </div>
                         <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
                           <MessageSquare size={14} className="text-indigo-500" />
-                          {el.interactions?.filter((i: any) => i.type_name === 'Comment').length || 0}
+                          {el.interactions?.filter((i: any) => i.type_name.toLowerCase() === 'comment').length || 0}
                         </div>
                       </div>
                     </div>
