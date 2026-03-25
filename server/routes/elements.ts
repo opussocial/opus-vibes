@@ -6,30 +6,40 @@ const router = express.Router();
 
 router.get("/elements", requireAuth, async (req: any, res) => {
   const user = req.user;
+  const canViewAll = user.permissions.includes("view_all_elements");
   const allowedTypeIds = user.type_permissions.filter((p: any) => p.can_view).map((p: any) => p.type_id);
+  
+  console.log(`[DEBUG] Fetching elements for ${user.username} (Role: ${user.role_name})`);
+  console.log(`[DEBUG] canViewAll: ${canViewAll}, allowedTypeIds: ${allowedTypeIds.length}`);
+  console.log(`[DEBUG] type_permissions count: ${user.type_permissions.length}`);
+  
   try {
-    const elements = await elementService.getElements(allowedTypeIds);
+    const elements = await elementService.getElements(allowedTypeIds, user.id, canViewAll);
+    console.log(`[DEBUG] Found ${elements.length} elements`);
     res.json(elements);
   } catch (err: any) {
+    console.error(`[DEBUG] Error fetching elements: ${err.message}`);
     res.status(500).json({ error: err.message });
   }
 });
 
 router.get("/elements/roots", requireAuth, async (req: any, res) => {
   const user = req.user;
+  const canViewAll = user.permissions.includes("view_all_elements");
   const allowedTypeIds = user.type_permissions.filter((p: any) => p.can_view).map((p: any) => p.type_id);
   try {
-    const elements = await elementService.getRootElements(allowedTypeIds);
+    const elements = await elementService.getRootElements(allowedTypeIds, user.id, canViewAll);
     res.json(elements);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), async (req, res) => {
+router.get("/elements/:id", requireAuth, checkTypePermission("can_view"), async (req: any, res) => {
   try {
-    const element = await elementService.getElement(req.params.id);
-    if (!element) return res.status(404).json({ error: "Element not found" });
+    const canViewAll = req.user.permissions.includes("view_all_elements");
+    const element = await elementService.getElement(req.params.id, req.user.id, canViewAll);
+    if (!element) return res.status(404).json({ error: "Element not found or permission denied" });
     res.json(element);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -63,29 +73,31 @@ router.get("/elements/:id/graph", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/elements", requireAuth, checkTypePermission("can_create"), async (req, res) => {
+router.post("/elements", requireAuth, checkTypePermission("can_create"), async (req: any, res) => {
   const { name, type_id, parent_id, modular_data } = req.body;
   try {
-    const id = await elementService.createElement({ name, type_id, parent_id, modular_data });
+    const id = await elementService.createElement({ name, type_id, parent_id, modular_data }, req.user.id);
     res.json({ id, name, type_id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), async (req, res) => {
+router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), async (req: any, res) => {
   const { name, parent_id, modular_data } = req.body;
   try {
-    await elementService.updateElement(req.params.id, { name, parent_id, modular_data });
+    const canViewAll = req.user.permissions.includes("view_all_elements");
+    await elementService.updateElement(req.params.id, { name, parent_id, modular_data }, req.user.id, canViewAll);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.delete("/elements/:id", requireAuth, checkTypePermission("can_delete"), async (req, res) => {
+router.delete("/elements/:id", requireAuth, checkTypePermission("can_delete"), async (req: any, res) => {
   try {
-    await elementService.deleteElement(req.params.id);
+    const canViewAll = req.user.permissions.includes("view_all_elements");
+    await elementService.deleteElement(req.params.id, req.user.id, canViewAll);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

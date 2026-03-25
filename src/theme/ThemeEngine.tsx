@@ -9,6 +9,10 @@ import * as TailwindTheme from "./tailwind/Home";
 import * as TailwindElementPage from "./tailwind/ElementPage";
 import * as BootstrapTheme from "./bootstrap/Home";
 import * as BootstrapElementPage from "./bootstrap/ElementPage";
+import * as MagazineTheme from "./magazine/Home";
+import * as MagazineElementPage from "./magazine/ElementPage";
+import * as HostelTheme from "./hostel/Home";
+import * as HostelElementPage from "./hostel/ElementPage";
 
 interface ThemeComponents {
   Home: React.ComponentType<any>;
@@ -27,6 +31,14 @@ const THEME_REGISTRY: Record<string, ThemeComponents> = {
   bootstrap: {
     Home: BootstrapTheme.Home,
     ElementPage: BootstrapElementPage.ElementPage,
+  },
+  magazine: {
+    Home: MagazineTheme.Home,
+    ElementPage: MagazineElementPage.ElementPage,
+  },
+  hostel: {
+    Home: HostelTheme.Home,
+    ElementPage: HostelElementPage.ElementPage,
   }
 };
 
@@ -39,16 +51,18 @@ export const ThemeEngine = ({
   onLogout: () => void,
   settings: Record<string, any>
 }) => {
-  const activeThemeName = settings.active_theme || "default";
-  const theme = THEME_REGISTRY[activeThemeName] || THEME_REGISTRY.default;
+  const activeThemeName = settings.active_theme || "hostel";
+  const theme = THEME_REGISTRY[activeThemeName] || THEME_REGISTRY.hostel;
 
   const { Home, ElementPage } = theme;
 
   return (
-    <Routes>
-      <Route path="/" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
-      <Route path="/e/:slug" element={<ElementPage currentUser={currentUser} onLogout={onLogout} />} />
-      <Route path="*" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
-    </Routes>
+    <div className="theme-ui">
+      <Routes>
+        <Route path="/" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
+        <Route path="/e/:slug" element={<ElementPage currentUser={currentUser} onLogout={onLogout} />} />
+        <Route path="*" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
+      </Routes>
+    </div>
   );
 };

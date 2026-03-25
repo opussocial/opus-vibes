@@ -59,7 +59,7 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
             <div className="w-8 h-8 bg-marine rounded-lg flex items-center justify-center text-brand-yellow">
               <Database size={18} />
             </div>
-            <span className="text-lg font-black tracking-tight text-marine">FlexCatalog</span>
+            <span className="text-lg font-black tracking-tight text-marine">Catalog</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -219,10 +219,10 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
             <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-100">
               <div className="flex items-center gap-3 mb-6 text-zinc-400">
                 <Info size={20} />
-                <span className="text-xs font-bold uppercase tracking-widest">About FlexCatalog</span>
+                <span className="text-xs font-bold uppercase tracking-widest">About this Catalog</span>
               </div>
               <p className="text-sm text-zinc-500 leading-relaxed mb-6">
-                This element is part of a modular data graph managed by FlexCatalog. All relationships and data points are dynamically linked.
+                This element is part of a modular data graph. All relationships and data points are dynamically linked.
               </p>
               <Link to="/admin" className="text-sm font-bold text-marine hover:underline">
                 Learn more about our system
@@ -238,9 +238,9 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
             <div className="w-8 h-8 bg-marine rounded-lg flex items-center justify-center text-brand-yellow">
               <Database size={18} />
             </div>
-            <span className="text-lg font-black tracking-tight text-marine">FlexCatalog</span>
+            <span className="text-lg font-black tracking-tight text-marine">Catalog</span>
           </div>
-          <p className="text-sm text-zinc-400 font-medium">© 2026 FlexCatalog. All rights reserved.</p>
+          <p className="text-sm text-zinc-400 font-medium">© 2026 Catalog. All rights reserved.</p>
         </div>
       </footer>
     </div>

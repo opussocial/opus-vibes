@@ -41,9 +41,9 @@ export class AuthService implements IAuthService {
     return { id: userId, username, email } as User;
   }
 
-  async login(username: string, password: string): Promise<User | null> {
-    const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username) as any;
-    if (user && bcrypt.compareSync(password, user.password)) {
+  async login(identifier: string, password: string): Promise<User | null> {
+    const user = db.prepare("SELECT * FROM users WHERE username = ? OR email = ?").get(identifier, identifier) as any;
+    if (user && user.password && bcrypt.compareSync(password, user.password)) {
       await this.ensureUserProfile(user.id, user.username);
       return { id: user.id, username: user.username, email: user.email } as User;
     }

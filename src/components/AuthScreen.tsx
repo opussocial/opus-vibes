@@ -109,7 +109,7 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           <div className="space-y-4">
             {mode !== "reset" && (
               <div>
-                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Username</label>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Username or Email</label>
                 <div className="relative">
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                   <input 
@@ -118,7 +118,7 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
                     value={username}
                     onChange={e => setUsername(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                    placeholder="johndoe"
+                    placeholder="admin or admin@example.com"
                   />
                 </div>
               </div>

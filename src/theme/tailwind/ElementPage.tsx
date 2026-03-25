@@ -46,7 +46,7 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
           <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white">
             <Database size={14} />
           </div>
-          FlexCatalog
+          Modern Catalog
         </Link>
         <div className="flex items-center gap-4">
           <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><Share2 size={18} /></button>
@@ -82,11 +82,11 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
                 <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <Heart size={16} className="text-rose-500" />
-                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name.toLowerCase() === 'like').length}</span>
+                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name === 'Like').length}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <MessageSquare size={16} className="text-indigo-500" />
-                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name.toLowerCase() === 'comment').length}</span>
+                    <span className="text-sm font-bold">{element.interactions.filter(i => i.type_name === 'Comment').length}</span>
                   </div>
                 </div>
               )}
@@ -221,7 +221,7 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
 
       <footer className="max-w-5xl mx-auto px-8 py-12 border-t border-slate-200 mt-12">
         <div className="flex items-center justify-between text-slate-400 text-sm">
-          <p>© 2026 FlexCatalog</p>
+          <p>© 2026 Modern Catalog</p>
           <Link to="/" className="hover:text-indigo-600 transition-colors">Back to Home</Link>
         </div>
       </footer>

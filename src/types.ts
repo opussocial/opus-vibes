@@ -22,6 +22,7 @@ export interface Property {
 export interface Element {
   id: number;
   type_id: number;
+  user_id?: number;
   parent_id?: number;
   type_name: string;
   name: string;

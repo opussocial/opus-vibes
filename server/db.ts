@@ -10,7 +10,29 @@ const __dirname = path.dirname(__filename);
 export const db = new Database("cms.db");
 
 export function initDb() {
+  console.log("[DEBUG] initDb started");
   db.exec(`
+    CREATE TABLE IF NOT EXISTS roles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
+      description TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS permissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id INTEGER NOT NULL,
+      permission_id INTEGER NOT NULL,
+      PRIMARY KEY (role_id, permission_id),
+      FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+      FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS element_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -33,6 +55,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS elements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type_id INTEGER NOT NULL,
+      user_id INTEGER,
       parent_id INTEGER,
       name TEXT NOT NULL,
       slug TEXT NOT NULL UNIQUE,
@@ -40,9 +63,70 @@ export function initDb() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (parent_id) REFERENCES elements(id) ON DELETE SET NULL
     );
 
+    CREATE TABLE IF NOT EXISTS role_type_permissions (
+      role_id INTEGER NOT NULL,
+      type_id INTEGER NOT NULL,
+      can_view INTEGER DEFAULT 1,
+      can_create INTEGER DEFAULT 0,
+      can_edit INTEGER DEFAULT 0,
+      can_delete INTEGER DEFAULT 0,
+      PRIMARY KEY (role_id, type_id),
+      FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+      FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE
+    );
+  `);
+
+  // --- Seed Roles and Permissions FIRST so triggers work ---
+  const rolesToSeed = [
+    { name: "Super Admin", slug: "super-admin", description: "Full system access" },
+    { name: "Editor", slug: "editor", description: "Can edit content" },
+    { name: "Viewer", slug: "viewer", description: "Can only view content" }
+  ];
+
+  for (const role of rolesToSeed) {
+    db.prepare("INSERT OR IGNORE INTO roles (name, slug, description) VALUES (?, ?, ?)").run(role.name, role.slug, role.description);
+  }
+
+  const globalPermissions = [
+    { name: "manage_types", description: "Can manage schema types, app definitions, and settings" },
+    { name: "manage_roles", description: "Can manage roles, users, and global permissions" },
+    { name: "view_all_elements", description: "Can view all elements regardless of ownership" }
+  ];
+
+  for (const perm of globalPermissions) {
+    db.prepare("INSERT OR IGNORE INTO permissions (name, description) VALUES (?, ?)").run(perm.name, perm.description);
+  }
+
+  const adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
+  if (adminRole) {
+    const allPerms = db.prepare("SELECT id FROM permissions").all() as any[];
+    for (const p of allPerms) {
+      db.prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)").run(adminRole.id, p.id);
+    }
+  }
+
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS after_type_insert
+    AFTER INSERT ON element_types
+    BEGIN
+      INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete)
+      SELECT id, NEW.id, 1, (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END), (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END), (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END)
+      FROM roles;
+    END;
+  `);
+
+  // Add user_id column if it doesn't exist (for existing databases)
+  try {
+    db.exec("ALTER TABLE elements ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL");
+  } catch (e) {
+    // Column might already exist
+  }
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS graph_relationship_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       source_type_id INTEGER NOT NULL,
@@ -252,293 +336,171 @@ export function initDb() {
     db.prepare("UPDATE roles SET slug = ? WHERE id = ?").run(slugify(r.name), r.id);
   }
 
-  // Seeding
-  const typeCount = db.prepare("SELECT COUNT(*) as count FROM element_types WHERE slug NOT IN ('profile')").get() as { count: number };
-  if (typeCount.count === 0) {
-    const insertType = db.prepare("INSERT INTO element_types (name, slug, description, icon, color) VALUES (?, ?, ?, ?, ?)");
-    const insertProp = db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)");
+  console.log("Database initialized. Starting seeding...");
 
-    const pubType = insertType.run("Publication", "publication", "A top-level digital or print publication", "BookOpen", "#1e40af").lastInsertRowid;
-    insertProp.run(pubType, "content", "Description");
-    insertProp.run(pubType, "file", "Logo/Cover");
+  // --- Seeding Helpers ---
+  const ensureType = (name: string, slug: string, description: string, icon: string, color: string) => {
+    db.prepare("INSERT OR IGNORE INTO element_types (name, slug, description, icon, color) VALUES (?, ?, ?, ?, ?)").run(name, slug, description, icon, color);
+    return (db.prepare("SELECT id FROM element_types WHERE slug = ?").get(slug) as any).id;
+  };
 
-    const issueType = insertType.run("Issue", "issue", "A specific edition of a publication", "Layers", "#0369a1").lastInsertRowid;
-    insertProp.run(issueType, "content", "Summary");
-    insertProp.run(issueType, "time_tracking", "Release Schedule");
-
-    const articleType = insertType.run("Article", "article", "A written piece of content", "FileText", "#0891b2").lastInsertRowid;
-    insertProp.run(articleType, "content", "Article Body");
-    insertProp.run(articleType, "urls_embeds", "References");
-
-    const pageType = insertType.run("Page", "page", "A static informational page", "File", "#0f766e").lastInsertRowid;
-    insertProp.run(pageType, "content", "Page Content");
-
-    // --- Hostel Types ---
-    const hostelType = insertType.run("Hostel", "hostel", "A budget-friendly lodging establishment", "Home", "#b91c1c").lastInsertRowid;
-    insertProp.run(hostelType, "content", "Description");
-    insertProp.run(hostelType, "place", "Location");
-
-    const roomType = insertType.run("Room", "room", "A room within a hostel", "DoorOpen", "#dc2626").lastInsertRowid;
-    insertProp.run(roomType, "content", "Room Details");
-
-    const bedType = insertType.run("Bed", "bed", "An individual bed in a room", "Bed", "#ef4444").lastInsertRowid;
-    insertProp.run(bedType, "color", "Status Color");
-
-    // --- Bookstore Types ---
-    const bookstoreType = insertType.run("Bookstore", "bookstore", "A shop that sells books", "Store", "#15803d").lastInsertRowid;
-    insertProp.run(bookstoreType, "content", "About the Store");
-    insertProp.run(bookstoreType, "place", "Location");
-
-    const bookType = insertType.run("Book", "book", "A printed or digital work", "Book", "#16a34a").lastInsertRowid;
-    insertProp.run(bookType, "content", "Summary");
-    insertProp.run(bookType, "product_info", "Pricing & SKU");
-
-    const authorType = insertType.run("Author", "author", "A person who writes books", "User", "#22c55e").lastInsertRowid;
-    insertProp.run(authorType, "content", "Biography");
-
-    // --- Art Gallery Types ---
-    const galleryType = insertType.run("Art Gallery", "art-gallery", "A space for the exhibition of art", "Image", "#db2777").lastInsertRowid;
-    insertProp.run(galleryType, "content", "Gallery Mission");
-    insertProp.run(galleryType, "place", "Location");
-
-    const exhibitionType = insertType.run("Exhibition", "exhibition", "A public display of art or items", "Palette", "#be185d").lastInsertRowid;
-    insertProp.run(exhibitionType, "content", "Exhibition Theme");
-    insertProp.run(exhibitionType, "time_tracking", "Duration");
-
-    const artworkType = insertType.run("Artwork", "artwork", "A single piece of art", "Frame", "#9d174d").lastInsertRowid;
-    insertProp.run(artworkType, "content", "Artist Statement");
-    insertProp.run(artworkType, "file", "Image of Work");
-    insertProp.run(artworkType, "product_info", "Price & Availability");
-
-    // --- Music Studio Types ---
-    const studioType = insertType.run("Music Studio", "music-studio", "A facility for sound recording and mixing", "Mic2", "#2563eb").lastInsertRowid;
-    insertProp.run(studioType, "content", "Studio Gear & Bio");
-    insertProp.run(studioType, "place", "Location");
-
-    const sessionType = insertType.run("Recording Session", "recording-session", "A scheduled time for recording", "Clock", "#1d4ed8").lastInsertRowid;
-    insertProp.run(sessionType, "time_tracking", "Session Time");
-    insertProp.run(sessionType, "content", "Session Notes");
-
-    const trackType = insertType.run("Track", "track", "A single musical recording", "Music", "#1e40af").lastInsertRowid;
-    insertProp.run(trackType, "content", "Lyrics/Notes");
-    insertProp.run(trackType, "file", "Audio Preview");
-
-    // --- Creative Agency Types ---
-    const agencyType = insertType.run("Creative Agency", "creative-agency", "A business providing creative services", "Briefcase", "#4f46e5").lastInsertRowid;
-    insertProp.run(agencyType, "content", "Agency Bio");
-    insertProp.run(agencyType, "place", "Headquarters");
-
-    const projectType = insertType.run("Project", "project", "A specific creative project", "ClipboardList", "#4338ca").lastInsertRowid;
-    insertProp.run(projectType, "content", "Project Scope");
-    insertProp.run(projectType, "time_tracking", "Timeline");
-
-    const assetType = insertType.run("Asset", "asset", "A creative deliverable", "FileImage", "#3730a3").lastInsertRowid;
-    insertProp.run(assetType, "file", "File");
-    insertProp.run(assetType, "content", "Asset Description");
-
-    // --- Screenwriting Types ---
-    const storyType = insertType.run("Story", "story", "A narrative or screenplay project", "Clapperboard", "#7c3aed").lastInsertRowid;
-    insertProp.run(storyType, "content", "Logline & Synopsis");
-
-    const chapterType = insertType.run("Chapter", "chapter", "A major division of a story", "Bookmark", "#8b5cf6").lastInsertRowid;
-    insertProp.run(chapterType, "content", "Chapter Summary");
-
-    const characterType = insertType.run("Character", "character", "A person in the story", "Users", "#a78bfa").lastInsertRowid;
-    insertProp.run(characterType, "content", "Character Profile");
-
-    const sceneType = insertType.run("Scene", "scene", "A specific sequence in a chapter", "Video", "#c4b5fd").lastInsertRowid;
-    insertProp.run(sceneType, "content", "Script Content");
-
-    const profileType = db.prepare("SELECT id FROM element_types WHERE slug = 'profile'").get() as any;
-
-    // Hierarchy
-    const insertHierarchy = db.prepare("INSERT INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)");
-    insertHierarchy.run(pubType, issueType);   // publication > issue
-    insertHierarchy.run(issueType, pageType);  // issue > page
-    insertHierarchy.run(issueType, articleType); // issue > article
-    insertHierarchy.run(pubType, pageType);    // publication > page
-
-    // Hostel Hierarchy
-    insertHierarchy.run(hostelType, roomType); // hostel > room
-    insertHierarchy.run(roomType, bedType);   // room > bed
-
-    // Bookstore Hierarchy
-    insertHierarchy.run(bookstoreType, bookType); // bookstore > book
-    insertHierarchy.run(bookstoreType, authorType); // bookstore > author (as contributors)
-
-    // Art Gallery Hierarchy
-    insertHierarchy.run(galleryType, exhibitionType); // gallery > exhibition
-    insertHierarchy.run(exhibitionType, artworkType); // exhibition > artwork
-
-    // Music Studio Hierarchy
-    insertHierarchy.run(studioType, sessionType); // studio > session
-    insertHierarchy.run(sessionType, trackType);   // session > track
-
-    // Creative Agency Hierarchy
-    insertHierarchy.run(agencyType, projectType); // agency > project
-    insertHierarchy.run(projectType, assetType);  // project > asset
-
-    // Screenwriting Hierarchy
-    insertHierarchy.run(storyType, chapterType);   // story > chapter
-    insertHierarchy.run(chapterType, sceneType);   // chapter > scene
-    insertHierarchy.run(storyType, characterType); // story > character
-
-    // Ensure basic roles exist
-    let adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
-    if (!adminRole) {
-      adminRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Super Admin", "super-admin", "Full system access").lastInsertRowid };
+  const ensureProperty = (typeId: number, tableName: string, label: string) => {
+    const exists = db.prepare("SELECT id FROM properties WHERE type_id = ? AND table_name = ?").get(typeId, tableName);
+    if (!exists) {
+      db.prepare("INSERT INTO properties (type_id, table_name, label) VALUES (?, ?, ?)").run(typeId, tableName, label);
     }
-    let editorRole = db.prepare("SELECT id FROM roles WHERE slug = 'editor'").get() as any;
-    if (!editorRole) {
-      editorRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Editor", "editor", "Can manage content").lastInsertRowid };
-    }
-    let viewerRole = db.prepare("SELECT id FROM roles WHERE slug = 'viewer'").get() as any;
-    if (!viewerRole) {
-      viewerRole = { id: db.prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)").run("Viewer", "viewer", "Can only view content").lastInsertRowid };
-    }
+  };
 
-    const types = db.prepare("SELECT id FROM element_types").all() as any[];
-    for (const t of types) {
-      // Clear existing permissions for these types to avoid duplicates if profile existed
-      db.prepare("DELETE FROM role_type_permissions WHERE type_id = ?").run(t.id);
-      db.prepare("INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete) VALUES (?, ?, 1, 1, 1, 0)").run(editorRole.id, t.id);
-      db.prepare("INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete) VALUES (?, ?, 1, 0, 0, 0)").run(viewerRole.id, t.id);
-      db.prepare("INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete) VALUES (?, ?, 1, 1, 1, 1)").run(adminRole.id, t.id);
-    }
+  const ensureHierarchy = (parentId: number, childId: number) => {
+    db.prepare("INSERT OR IGNORE INTO type_hierarchy (parent_type_id, child_type_id) VALUES (?, ?)").run(parentId, childId);
+  };
 
-    // Seed Sample Elements
-    const pubId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("The Tech Chronicle", "the-tech-chronicle", pubType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(pubId, "A leading publication covering the intersection of technology, society, and the future.");
+  const ensureElement = (name: string, slug: string, typeId: number, parentId: number | null = null) => {
+    db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run(name, slug, typeId, parentId);
+    return (db.prepare("SELECT id FROM elements WHERE slug = ?").get(slug) as any).id;
+  };
 
-    const issueId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("March 2026: The AI Revolution", "march-2026-ai-revolution", issueType, pubId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(issueId, "This issue explores the rapid advancement of generative agents and their impact on global industries.");
-    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(issueId, "2026-03-01 00:00:00", "2026-03-31 23:59:59");
+  // --- 1. Seed Types ---
+  const magType = ensureType("Magazine", "magazine", "A periodic publication", "BookOpen", "#1e40af");
+  ensureProperty(magType, "content", "Description");
+  ensureProperty(magType, "file", "Logo/Cover");
 
-    const page1Id = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("About The Chronicle", "about-the-chronicle", pageType, pubId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(page1Id, "Founded in 2020, The Tech Chronicle has been at the forefront of tech journalism for over half a decade.");
+  const issueType = ensureType("Issue", "issue", "A specific edition of a publication", "Layers", "#0369a1");
+  ensureProperty(issueType, "content", "Summary");
+  ensureProperty(issueType, "time_tracking", "Release Schedule");
 
-    const page2Id = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Editor's Note", "editors-note", pageType, issueId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(page2Id, "In this month's note, we discuss why the 'Agentic Era' is more than just a buzzword.");
+  const articleType = ensureType("Article", "article", "A written piece of content", "FileText", "#0891b2");
+  ensureProperty(articleType, "content", "Article Body");
+  ensureProperty(articleType, "urls_embeds", "References");
 
-    const page3Id = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Privacy Policy", "privacy-policy", pageType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(page3Id, "Your privacy is important to us. This page outlines how we handle your data.");
+  const pageType = ensureType("Page", "page", "A static informational page", "File", "#0f766e");
+  ensureProperty(pageType, "content", "Page Content");
 
-    const articleId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("The Rise of Generative Agents", "rise-of-generative-agents", articleType, issueId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(articleId, "Generative agents are no longer just chatbots; they are becoming autonomous collaborators in the workplace...");
-    db.prepare("INSERT INTO urls_embeds (element_id, url, title) VALUES (?, ?, ?)").run(articleId, "https://ai.google.dev", "Learn more about Gemini");
+  const hostelType = ensureType("Hostel", "hostel", "A budget-friendly lodging establishment", "Home", "#b91c1c");
+  ensureProperty(hostelType, "content", "Description");
+  ensureProperty(hostelType, "place", "Location");
 
-    // --- Hostel Seeds ---
-    const hostelId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("The Nomad's Rest", "nomads-rest", hostelType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(hostelId, "A cozy, community-driven hostel located in the heart of the historic district.");
-    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(hostelId, 52.3676, 4.9041, "Amsterdam, Netherlands");
+  const roomType = ensureType("Room", "room", "A room within a hostel", "DoorOpen", "#dc2626");
+  ensureProperty(roomType, "content", "Room Details");
 
-    const roomId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Mixed Dorm A", "mixed-dorm-a", roomType, hostelId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(roomId, "A spacious 8-bed dorm with lockers and high-speed Wi-Fi.");
+  const bedType = ensureType("Bed", "bed", "An individual bed in a room", "Bed", "#ef4444");
+  ensureProperty(bedType, "color", "Status Color");
 
-    const bed1Id = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Bed A1 (Lower)", "bed-a1", bedType, roomId).lastInsertRowid;
-    db.prepare("INSERT INTO color (element_id, hex) VALUES (?, ?)").run(bed1Id, "#10b981"); // Green for available
+  const bookstoreType = ensureType("Bookstore", "bookstore", "A shop that sells books", "Store", "#15803d");
+  ensureProperty(bookstoreType, "content", "About the Store");
+  ensureProperty(bookstoreType, "place", "Location");
 
-    const bed2Id = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Bed A2 (Upper)", "bed-a2", bedType, roomId).lastInsertRowid;
-    db.prepare("INSERT INTO color (element_id, hex) VALUES (?, ?)").run(bed2Id, "#f43f5e"); // Red for occupied
+  const bookType = ensureType("Book", "book", "A printed or digital work", "Book", "#16a34a");
+  ensureProperty(bookType, "content", "Summary");
+  ensureProperty(bookType, "product_info", "Pricing & SKU");
 
-    // --- Bookstore Seeds ---
-    const bookstoreId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("The Dusty Shelf", "the-dusty-shelf", bookstoreType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(bookstoreId, "Specializing in rare first editions and forgotten classics since 1974.");
-    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(bookstoreId, 51.5074, -0.1278, "Charing Cross Rd, London");
+  const authorType = ensureType("Author", "author", "A person who writes books", "User", "#22c55e");
+  ensureProperty(authorType, "content", "Biography");
 
-    const author1Id = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("F. Scott Fitzgerald", "f-scott-fitzgerald", authorType, bookstoreId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(author1Id, "An American novelist and short story writer, widely regarded as one of the greatest American writers of the 20th century.");
+  const galleryType = ensureType("Art Gallery", "art-gallery", "A space for the exhibition of art", "Image", "#db2777");
+  ensureProperty(galleryType, "content", "Gallery Mission");
+  ensureProperty(galleryType, "place", "Location");
 
-    const book1Id = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("The Great Gatsby (1925)", "great-gatsby-1925", bookType, bookstoreId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(book1Id, "A 1925 novel by American writer F. Scott Fitzgerald. Set in the Jazz Age on Long Island.");
-    db.prepare("INSERT INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(book1Id, "RARE-GATSBY-01", 1250.00, "GBP", 1);
+  const exhibitionType = ensureType("Exhibition", "exhibition", "A public display of art or items", "Palette", "#be185d");
+  ensureProperty(exhibitionType, "content", "Exhibition Theme");
+  ensureProperty(exhibitionType, "time_tracking", "Duration");
 
-    // --- Art Gallery Seeds ---
-    const galleryId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("The Prism Gallery", "prism-gallery", galleryType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(galleryId, "A contemporary art space dedicated to showcasing emerging digital and physical artists.");
-    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(galleryId, 40.7128, -74.0060, "Chelsea, New York, NY");
+  const artworkType = ensureType("Artwork", "artwork", "A single piece of art", "Frame", "#9d174d");
+  ensureProperty(artworkType, "content", "Artist Statement");
+  ensureProperty(artworkType, "file", "Image of Work");
+  ensureProperty(artworkType, "product_info", "Price & Availability");
 
-    const exhibitionId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Digital Horizons", "digital-horizons", exhibitionType, galleryId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(exhibitionId, "An exploration of how AI and generative tools are reshaping the landscape of modern art.");
-    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(exhibitionId, "2026-04-01 10:00:00", "2026-05-31 18:00:00");
+  const studioType = ensureType("Music Studio", "music-studio", "A facility for sound recording and mixing", "Mic2", "#2563eb");
+  ensureProperty(studioType, "content", "Studio Gear & Bio");
+  ensureProperty(studioType, "place", "Location");
 
-    const artworkId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Latent Dreams #4", "latent-dreams-4", artworkType, exhibitionId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(artworkId, "A large-scale generative piece exploring the subconscious of a neural network trained on classical landscapes.");
-    db.prepare("INSERT INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(artworkId, "ART-LD-04", 4500.00, "USD", 1);
-    db.prepare("INSERT INTO file (element_id, filename, url, mime_type) VALUES (?, ?, ?, ?)").run(artworkId, "latent-dreams.jpg", "https://picsum.photos/seed/art/1200/800", "image/jpeg");
+  const sessionType = ensureType("Recording Session", "recording-session", "A scheduled time for recording", "Clock", "#1d4ed8");
+  ensureProperty(sessionType, "time_tracking", "Session Time");
+  ensureProperty(sessionType, "content", "Session Notes");
 
-    // --- Music Studio Seeds ---
-    const studioId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Echo Chamber Studios", "echo-chamber-studios", studioType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(studioId, "State-of-the-art recording facility specializing in analog warmth and modern precision.");
-    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(studioId, 34.0522, -118.2437, "Hollywood, Los Angeles, CA");
+  const trackType = ensureType("Track", "track", "A single musical recording", "Music", "#1e40af");
+  ensureProperty(trackType, "content", "Lyrics/Notes");
+  ensureProperty(trackType, "file", "Audio Preview");
 
-    const sessionId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("The Midnight Session", "midnight-session", sessionType, studioId).lastInsertRowid;
-    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(sessionId, "2026-03-20 22:00:00", "2026-03-21 04:00:00");
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(sessionId, "Vocal tracking for the upcoming 'Neon Shadows' soundtrack.");
+  const agencyType = ensureType("Creative Agency", "creative-agency", "A business providing creative services", "Briefcase", "#4f46e5");
+  ensureProperty(agencyType, "content", "Agency Bio");
+  ensureProperty(agencyType, "place", "Headquarters");
 
-    const trackId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Cyberpunk Lullaby", "cyberpunk-lullaby", trackType, sessionId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(trackId, "A haunting synth-driven track with ethereal vocals. Key: Cm, BPM: 85.");
+  const projectType = ensureType("Project", "project", "A specific creative project", "ClipboardList", "#4338ca");
+  ensureProperty(projectType, "content", "Project Scope");
+  ensureProperty(projectType, "time_tracking", "Timeline");
 
-    // --- Creative Agency Seeds ---
-    const agencyId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Vanguard Creative", "vanguard-creative", agencyType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(agencyId, "A full-service creative agency specializing in brand identity and digital storytelling.");
-    db.prepare("INSERT INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(agencyId, 37.7749, -122.4194, "Market St, San Francisco, CA");
+  const assetType = ensureType("Asset", "asset", "A creative deliverable", "FileImage", "#3730a3");
+  ensureProperty(assetType, "file", "File");
+  ensureProperty(assetType, "content", "Asset Description");
 
-    const projectId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Rebrand 2026", "rebrand-2026", projectType, agencyId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(projectId, "A complete visual overhaul for a major fintech startup.");
-    db.prepare("INSERT INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(projectId, "2026-01-01 09:00:00", "2026-06-30 17:00:00");
+  const storyType = ensureType("Story", "story", "A narrative or screenplay project", "Clapperboard", "#7c3aed");
+  ensureProperty(storyType, "content", "Logline & Synopsis");
 
-    const assetId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("New Logo Concept", "new-logo-concept", assetType, projectId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(assetId, "A minimalist geometric logo representing growth and stability.");
-    db.prepare("INSERT INTO file (element_id, filename, url, mime_type) VALUES (?, ?, ?, ?)").run(assetId, "logo-v1.png", "https://picsum.photos/seed/logo/400/400", "image/png");
+  const chapterType = ensureType("Chapter", "chapter", "A major division of a story", "Bookmark", "#8b5cf6");
+  ensureProperty(chapterType, "content", "Chapter Summary");
 
-    // --- Screenwriting Seeds ---
-    const storyId = db.prepare("INSERT INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Neon Shadows", "neon-shadows", storyType).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(storyId, "In a rain-soaked cyberpunk future, a low-level data courier discovers a secret that could topple the mega-corporations.");
+  const characterType = ensureType("Character", "character", "A person in the story", "Users", "#a78bfa");
+  ensureProperty(characterType, "content", "Character Profile");
 
-    const charId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Jax Miller", "jax-miller", characterType, storyId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(charId, "A cynical courier with a cybernetic eye and a past he'd rather forget.");
+  const sceneType = ensureType("Scene", "scene", "A specific sequence in a chapter", "Video", "#c4b5fd");
+  ensureProperty(sceneType, "content", "Script Content");
 
-    const chapId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Chapter 1: The Drop", "chapter-1-the-drop", chapterType, storyId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(chapId, "Jax takes a routine job that goes horribly wrong when his contact is assassinated.");
+  const tagType = ensureType("Tag", "tag", "Categorization tags", "Tag", "#10b981");
 
-    const sceneId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run("Scene 1: The Alleyway", "scene-1-alleyway", sceneType, chapId).lastInsertRowid;
-    db.prepare("INSERT INTO content (element_id, body) VALUES (?, ?)").run(sceneId, "EXT. ALLEYWAY - NIGHT\n\nRain hammers against the rusted dumpsters. JAX (30s) waits, checking his internal clock. The neon sign above flickers: 'OPEN'.");
+  // --- 2. Seed Hierarchy ---
+  ensureHierarchy(magType, issueType);
+  ensureHierarchy(issueType, pageType);
+  ensureHierarchy(issueType, articleType);
+  ensureHierarchy(magType, pageType);
+  ensureHierarchy(hostelType, roomType);
+  ensureHierarchy(roomType, bedType);
+  ensureHierarchy(bookstoreType, bookType);
+  ensureHierarchy(bookstoreType, authorType);
+  ensureHierarchy(galleryType, exhibitionType);
+  ensureHierarchy(exhibitionType, artworkType);
+  ensureHierarchy(studioType, sessionType);
+  ensureHierarchy(sessionType, trackType);
+  ensureHierarchy(agencyType, projectType);
+  ensureHierarchy(projectType, assetType);
+  ensureHierarchy(storyType, chapterType);
+  ensureHierarchy(chapterType, sceneType);
+  ensureHierarchy(storyType, characterType);
 
-    // --- Showcase Content: Tags, Interactions, and User ---
-    
-    // 1. Interaction Types
-    const likeTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("Like", "Heart", "User likes the element").lastInsertRowid;
-    const commentTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("Comment", "MessageSquare", "User commented on the element").lastInsertRowid;
-    const viewTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("View", "Eye", "User viewed the element").lastInsertRowid;
+  // --- 3. Seed Elements ---
+  const magId = ensureElement("The Magazine", "the-magazine", magType);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(magId, "Documenting the evolution of human creativity, technology, and culture in the digital age.");
 
-    // 2. Showcase User
-    const showcaseUserId = db.prepare("INSERT OR IGNORE INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("creative_pro", "pro@creative.com", bcrypt.hashSync("password123", 10), viewerRole.id).lastInsertRowid;
+  const issueId = ensureElement("March 2026: The AI Revolution", "march-2026-ai-revolution", issueType, magId);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(issueId, "This issue explores the rapid advancement of generative agents and their impact on global industries.");
+  db.prepare("INSERT OR IGNORE INTO time_tracking (element_id, start_time, end_time) VALUES (?, ?, ?)").run(issueId, "2026-03-01 00:00:00", "2026-03-31 23:59:59");
 
-    // 3. Tags as Element Type
-    const tagType = db.prepare("INSERT OR IGNORE INTO element_types (name, slug, description, icon, color) VALUES (?, ?, ?, ?, ?)").run("Tag", "tag", "Categorization tags", "Tag", "#10b981").lastInsertRowid;
-    
-    // 4. Create some Tags
-    const tagInspiration = db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Inspiration", "tag-inspiration", tagType).lastInsertRowid;
-    const tagProcess = db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Process", "tag-process", tagType).lastInsertRowid;
-    const tagFeatured = db.prepare("INSERT OR IGNORE INTO elements (name, slug, type_id) VALUES (?, ?, ?)").run("Featured", "tag-featured", tagType).lastInsertRowid;
+  const page1Id = ensureElement("About The Magazine", "about-the-magazine", pageType, magId);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(page1Id, "Founded in 2020, The Magazine has been at the forefront of journalism for over half a decade.");
 
-    // 5. Link Tags to Elements (using graph_edges)
-    // We need a relationship type first
-    const tagRelId = db.prepare("INSERT OR IGNORE INTO graph_relationship_types (source_type_id, target_type_id, name) VALUES (?, ?, ?)").run(tagType, artworkType, "Categorizes").lastInsertRowid;
-    if (tagRelId && tagFeatured && artworkId) {
-      db.prepare("INSERT OR IGNORE INTO graph_edges (rel_type_id, source_el_id, target_el_id) VALUES (?, ?, ?)").run(tagRelId, tagFeatured, artworkId);
-    }
+  const articleId = ensureElement("The Rise of Generative Agents", "rise-of-generative-agents", articleType, issueId);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(articleId, "Generative agents are no longer just chatbots; they are becoming autonomous collaborators in the workplace...");
+  db.prepare("INSERT OR IGNORE INTO urls_embeds (element_id, url, title) VALUES (?, ?, ?)").run(articleId, "https://ai.google.dev", "Learn more about Gemini");
 
-    // 6. Add some Interactions
-    if (showcaseUserId && artworkId) {
-      const actualLikeType = db.prepare("SELECT id FROM interaction_types WHERE name = 'Like'").get() as any;
-      const actualCommentType = db.prepare("SELECT id FROM interaction_types WHERE name = 'Comment'").get() as any;
-      
-      db.prepare("INSERT INTO interactions (element_id, user_id, type_id) VALUES (?, ?, ?)").run(artworkId, showcaseUserId, actualLikeType.id);
-      db.prepare("INSERT INTO interactions (element_id, user_id, type_id, content) VALUES (?, ?, ?, ?)").run(artworkId, showcaseUserId, actualCommentType.id, "This is absolutely stunning! The latent space interpretation is spot on.");
-    }
-  }
+  const hostelId = ensureElement("The Nomad's Rest", "nomads-rest", hostelType);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(hostelId, "A cozy, community-driven hostel located in the heart of the historic district.");
+  db.prepare("INSERT OR IGNORE INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(hostelId, 52.3676, 4.9041, "Amsterdam, Netherlands");
+
+  const roomId = ensureElement("Mixed Dorm A", "mixed-dorm-a", roomType, hostelId);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(roomId, "A spacious 8-bed dorm with lockers and high-speed Wi-Fi.");
+
+  const bed1Id = ensureElement("Bed A1 (Lower)", "bed-a1", bedType, roomId);
+  db.prepare("INSERT OR IGNORE INTO color (element_id, hex) VALUES (?, ?)").run(bed1Id, "#10b981");
+
+  const artworkId = ensureElement("Latent Dreams #4", "latent-dreams-4", artworkType);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(artworkId, "A large-scale generative piece exploring the subconscious of a neural network.");
+  db.prepare("INSERT OR IGNORE INTO product_info (element_id, sku, price, currency, stock) VALUES (?, ?, ?, ?, ?)").run(artworkId, "ART-LD-04", 4500.00, "USD", 1);
+  db.prepare("INSERT OR IGNORE INTO file (element_id, filename, url, mime_type) VALUES (?, ?, ?, ?)").run(artworkId, "latent-dreams.jpg", "https://picsum.photos/seed/art/1200/800", "image/jpeg");
+
+  // --- 4. Seed Interaction Types ---
+  const likeTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("Like", "Heart", "User likes the element").lastInsertRowid;
+  const commentTypeId = db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("Comment", "MessageSquare", "User commented on the element").lastInsertRowid;
+  db.prepare("INSERT OR IGNORE INTO interaction_types (name, icon, description) VALUES (?, ?, ?)").run("View", "Eye", "User viewed the element");
 
   // Ensure Profile type exists
   let profileType = db.prepare("SELECT id FROM element_types WHERE slug = 'profile'").get() as any;
@@ -558,34 +520,62 @@ export function initDb() {
     }
   }
 
-  // Ensure at least one admin exists
-  const adminCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Super Admin'").get() as { count: number };
-  if (adminCount.count === 0) {
-    const adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Super Admin'").get() as any;
-    if (adminRole) {
-      const hashedPassword = bcrypt.hashSync("password123", 10);
-      db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole.id);
+  // --- 5. Fix role_type_permissions for existing types ---
+  const allTypes = db.prepare("SELECT id FROM element_types").all() as any[];
+  const allRoles = db.prepare("SELECT id, name FROM roles").all() as any[];
+  for (const type of allTypes) {
+    for (const role of allRoles) {
+      db.prepare(`
+        INSERT OR IGNORE INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete)
+        VALUES (?, ?, 1, ?, ?, ?)
+      `).run(
+        role.id, 
+        type.id, 
+        role.name === 'Super Admin' ? 1 : 0,
+        role.name === 'Super Admin' ? 1 : 0,
+        role.name === 'Super Admin' ? 1 : 0
+      );
     }
+  }
+
+  // Ensure current user is Super Admin
+  const currentUserEmail = "pedrokoblitz@gmail.com";
+  const currentUser = db.prepare("SELECT id FROM users WHERE email = ?").get(currentUserEmail) as any;
+  if (currentUser && adminRole) {
+    console.log(`Ensuring ${currentUserEmail} is Super Admin...`);
+    db.prepare("UPDATE users SET role_id = ? WHERE id = ?").run(adminRole.id, currentUser.id);
+  }
+
+  const adminExists = db.prepare("SELECT id FROM users WHERE username = 'admin' OR email = 'admin@example.com'").get() as any;
+  if (!adminExists && adminRole) {
+    console.log("Creating default admin user...");
+    const hashedPassword = bcrypt.hashSync("password123", 10);
+    db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("admin", "admin@example.com", hashedPassword, adminRole.id);
+  } else if (adminExists && adminRole) {
+    db.prepare("UPDATE users SET role_id = ? WHERE id = ?").run(adminRole.id, adminExists.id);
   }
 
   // Ensure Editor exists
-  const editorCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Editor'").get() as { count: number };
-  if (editorCount.count === 0) {
-    let editorRole = db.prepare("SELECT id FROM roles WHERE name = 'Editor'").get() as any;
-    if (editorRole) {
-      const hashedPassword = bcrypt.hashSync("password123", 10);
-      db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("editor", "editor@example.com", hashedPassword, editorRole.id);
-    }
+  const editorRole = db.prepare("SELECT id FROM roles WHERE slug = 'editor'").get() as any;
+  const editorExists = db.prepare("SELECT id FROM users WHERE username = 'editor' OR email = 'editor@example.com'").get();
+  if (!editorExists && editorRole) {
+    const hashedPassword = bcrypt.hashSync("password123", 10);
+    db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("editor", "editor@example.com", hashedPassword, editorRole.id);
   }
 
   // Ensure Viewer exists
-  const viewerCount = db.prepare("SELECT COUNT(*) as count FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = 'Viewer'").get() as { count: number };
-  if (viewerCount.count === 0) {
-    let viewerRole = db.prepare("SELECT id FROM roles WHERE name = 'Viewer'").get() as any;
-    if (viewerRole) {
-      const hashedPassword = bcrypt.hashSync("password123", 10);
-      db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("viewer", "viewer@example.com", hashedPassword, viewerRole.id);
-    }
+  const viewerRole = db.prepare("SELECT id FROM roles WHERE slug = 'viewer'").get() as any;
+  const viewerExists = db.prepare("SELECT id FROM users WHERE username = 'viewer' OR email = 'viewer@example.com'").get();
+  if (!viewerExists && viewerRole) {
+    const hashedPassword = bcrypt.hashSync("password123", 10);
+    db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("viewer", "viewer@example.com", hashedPassword, viewerRole.id);
+  }
+
+  // Ensure creative_pro exists
+  const proExists = db.prepare("SELECT id FROM users WHERE username = 'creative_pro' OR email = 'pro@creative.com'").get();
+  if (!proExists && viewerRole) {
+    const hashedPassword = bcrypt.hashSync("password123", 10);
+    db.prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)").run("creative_pro", "pro@creative.com", hashedPassword, viewerRole.id);
   }
 
   // Ensure default settings exist
@@ -619,4 +609,5 @@ export function initDb() {
   if (!activeThemeSetting) {
     db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("active_theme", JSON.stringify("default"));
   }
+  console.log("[DEBUG] initDb finished");
 }

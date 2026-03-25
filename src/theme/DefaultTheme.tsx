@@ -25,7 +25,7 @@ const HeroTemplate = ({ element }: { element: ElementDetail }) => {
           <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
             <Database size={18} />
           </div>
-          <span className="font-bold text-zinc-900 tracking-tight">FlexCatalog</span>
+          <span className="font-bold text-zinc-900 tracking-tight">My Catalog</span>
         </div>
         <div className="hidden md:flex items-center gap-8">
           <a href="#" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors">Features</a>
@@ -50,7 +50,7 @@ const HeroTemplate = ({ element }: { element: ElementDetail }) => {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-100 rounded-full text-zinc-600 text-xs font-bold mb-6">
               <Zap size={14} className="text-zinc-900" />
-              <span>Powered by FlexCatalog</span>
+              <span>Powered by our system</span>
             </div>
             <h1 className="text-6xl md:text-7xl font-black tracking-tight text-zinc-900 mb-8 leading-[1.1]">
               {element.name}
@@ -100,7 +100,7 @@ const HeroTemplate = ({ element }: { element: ElementDetail }) => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-zinc-900 mb-4">Modular Capabilities</h2>
-            <p className="text-zinc-500 max-w-2xl mx-auto">FlexCatalog allows you to define any data structure and manage it with ease.</p>
+            <p className="text-zinc-500 max-w-2xl mx-auto">Our system allows you to define any data structure and manage it with ease.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
@@ -129,9 +129,9 @@ const HeroTemplate = ({ element }: { element: ElementDetail }) => {
             <div className="w-6 h-6 bg-zinc-900 rounded flex items-center justify-center text-white">
               <Database size={14} />
             </div>
-            <span className="font-bold text-zinc-900 text-sm">FlexCatalog</span>
+            <span className="font-bold text-zinc-900 text-sm">My Catalog</span>
           </div>
-          <p className="text-zinc-400 text-sm">© 2026 FlexCatalog. All rights reserved.</p>
+          <p className="text-zinc-400 text-sm">© 2026 My Catalog. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-zinc-400 hover:text-zinc-900 transition-colors text-sm">Twitter</a>
             <a href="#" className="text-zinc-400 hover:text-zinc-900 transition-colors text-sm">GitHub</a>
@@ -151,7 +151,7 @@ const ElementTemplate = ({ element }: { element: ElementDetail }) => {
           <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
             <Database size={18} />
           </div>
-          <span className="font-bold text-zinc-900 tracking-tight">FlexCatalog</span>
+          <span className="font-bold text-zinc-900 tracking-tight">My Catalog</span>
         </Link>
         <Link to="/admin" className="text-sm font-bold text-zinc-500 hover:text-zinc-900">Admin</Link>
       </nav>

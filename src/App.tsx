@@ -20,6 +20,7 @@ import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePe
 
 // --- Theme ---
 import { ThemeEngine } from "./theme/ThemeEngine";
+import { ThemeProvider } from "./theme/ThemeContext";
 
 // --- Components ---
 import { AuthScreen } from "./components/AuthScreen";
@@ -78,15 +79,31 @@ export default function App() {
     init();
   }, []);
 
-  // Pick a random element slug and set it in settings if not set
+  // Set default settings if not set
   useEffect(() => {
-    if (elements.length > 0 && !settings["home_element"] && currentUser?.permissions.includes("manage_types")) {
-      const randomElement = elements[Math.floor(Math.random() * elements.length)];
-      fetch(`/api/settings/home_element`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: randomElement.slug })
-      }).then(() => fetchData());
+    if (elements.length > 0 && currentUser?.permissions.includes("manage_types")) {
+      const updates: Record<string, string> = {};
+      
+      if (!settings["home_element"]) {
+        const homeElement = elements.find(e => e.slug === "home") || elements[0];
+        updates["home_element"] = homeElement.slug;
+      }
+      
+      if (!settings["active_theme"]) {
+        updates["active_theme"] = "magazine";
+      }
+
+      if (Object.keys(updates).length > 0) {
+        Promise.all(
+          Object.entries(updates).map(([key, value]) => 
+            fetch(`/api/settings/${key}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ value })
+            })
+          )
+        ).then(() => fetchData());
+      }
     }
   }, [elements, settings, currentUser]);
 
@@ -403,7 +420,11 @@ export default function App() {
   }
 
   if (!isAdminPath) {
-    return <ThemeEngine currentUser={currentUser} onLogout={handleLogout} settings={settings} />;
+    return (
+      <ThemeProvider value={{ elements, types, relTypes, graph, settings, currentUser }}>
+        <ThemeEngine currentUser={currentUser} onLogout={handleLogout} settings={settings} />
+      </ThemeProvider>
+    );
   }
 
   if (!currentUser) {
@@ -418,7 +439,7 @@ export default function App() {
   const allowedChildTypes = currentElement ? types.filter(t => t.allowed_parent_types?.includes(currentElement.type_id)) : [];
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white text-zinc-900 font-sans overflow-hidden">
+    <div className="admin-ui flex flex-col md:flex-row h-screen bg-white text-zinc-900 overflow-hidden">
       {/* Mobile Menu Trigger (Floating) */}
       <button 
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -566,6 +587,7 @@ export default function App() {
                 types={types}
                 getTypePermission={getTypePermission}
                 handleDelete={handleDelete}
+                currentUser={currentUser}
               />
             } />
             <Route path="/admin/elements/new" element={

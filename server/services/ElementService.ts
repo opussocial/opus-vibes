@@ -4,38 +4,77 @@ import { IElementService } from "./interfaces";
 import { Element, GraphEdge } from "../../src/types";
 
 export class ElementService implements IElementService {
-  async getElements(allowedTypeIds: number[]): Promise<Element[]> {
-    if (allowedTypeIds.length === 0) return [];
-    const placeholders = allowedTypeIds.map(() => "?").join(",");
-    return db.prepare(`
+  async getElements(allowedTypeIds: number[], userId?: number, canViewAll: boolean = false): Promise<Element[]> {
+    if (!canViewAll && allowedTypeIds.length === 0) return [];
+    
+    let query = `
       SELECT e.*, t.name as type_name 
       FROM elements e 
       JOIN element_types t ON e.type_id = t.id
-      WHERE e.type_id IN (${placeholders})
-      ORDER BY e.updated_at DESC
-    `).all(...allowedTypeIds) as Element[];
+    `;
+    
+    const params: any[] = [];
+    
+    if (!canViewAll) {
+      const placeholders = allowedTypeIds.map(() => "?").join(",");
+      query += ` WHERE e.type_id IN (${placeholders})`;
+      params.push(...allowedTypeIds);
+      
+      if (userId) {
+        query += ` AND (e.user_id = ? OR e.user_id IS NULL)`;
+        params.push(userId);
+      }
+    }
+    
+    query += ` ORDER BY e.updated_at DESC`;
+    
+    return db.prepare(query).all(...params) as Element[];
   }
 
-  async getRootElements(allowedTypeIds: number[]): Promise<Element[]> {
-    if (allowedTypeIds.length === 0) return [];
-    const placeholders = allowedTypeIds.map(() => "?").join(",");
-    return db.prepare(`
+  async getRootElements(allowedTypeIds: number[], userId?: number, canViewAll: boolean = false): Promise<Element[]> {
+    if (!canViewAll && allowedTypeIds.length === 0) return [];
+    
+    let query = `
       SELECT e.*, t.name as type_name 
       FROM elements e 
       JOIN element_types t ON e.type_id = t.id
-      WHERE e.type_id IN (${placeholders}) AND e.parent_id IS NULL
-      ORDER BY e.name ASC
-    `).all(...allowedTypeIds) as Element[];
+      WHERE e.parent_id IS NULL
+    `;
+    
+    const params: any[] = [];
+    
+    if (!canViewAll) {
+      const placeholders = allowedTypeIds.map(() => "?").join(",");
+      query += ` AND e.type_id IN (${placeholders})`;
+      params.push(...allowedTypeIds);
+      
+      if (userId) {
+        query += ` AND (e.user_id = ? OR e.user_id IS NULL)`;
+        params.push(userId);
+      }
+    }
+    
+    query += ` ORDER BY e.name ASC`;
+    
+    return db.prepare(query).all(...params) as Element[];
   }
 
-  async getElement(idOrSlug: string): Promise<any> {
+  async getElement(idOrSlug: string, userId?: number, canViewAll: boolean = false): Promise<any> {
     const isId = /^\d+$/.test(idOrSlug);
-    const element = db.prepare(`
+    let query = `
       SELECT e.*, t.name as type_name 
       FROM elements e 
       JOIN element_types t ON e.type_id = t.id
       WHERE e.${isId ? "id" : "slug"} = ?
-    `).get(idOrSlug) as any;
+    `;
+    const params: any[] = [idOrSlug];
+
+    if (!canViewAll && userId) {
+      query += ` AND (e.user_id = ? OR e.user_id IS NULL)`;
+      params.push(userId);
+    }
+
+    const element = db.prepare(query).get(...params) as any;
 
     if (!element) return null;
 
@@ -112,7 +151,7 @@ export class ElementService implements IElementService {
     `).all(element.id, element.id) as GraphEdge[];
   }
 
-  async createElement(data: { name: string, type_id: number, parent_id: number | null, modular_data: any }): Promise<number> {
+  async createElement(data: { name: string, type_id: number, parent_id: number | null, modular_data: any }, userId?: number): Promise<number> {
     const { name, type_id, parent_id, modular_data } = data;
     const baseSlug = slugify(name);
     
@@ -123,7 +162,7 @@ export class ElementService implements IElementService {
         slug = `${baseSlug}-${counter++}`;
       }
 
-      const elementId = db.prepare("INSERT INTO elements (name, slug, type_id, parent_id) VALUES (?, ?, ?, ?)").run(name, slug, type_id, parent_id).lastInsertRowid as number;
+      const elementId = db.prepare("INSERT INTO elements (name, slug, type_id, user_id, parent_id) VALUES (?, ?, ?, ?, ?)").run(name, slug, type_id, userId || null, parent_id).lastInsertRowid as number;
       const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(type_id) as any[];
       for (const prop of props) {
         const table = prop.table_name;
@@ -144,13 +183,21 @@ export class ElementService implements IElementService {
     return transaction();
   }
 
-  async updateElement(idOrSlug: string, data: { name: string, parent_id: number | null, modular_data: any }): Promise<void> {
+  async updateElement(idOrSlug: string, data: { name: string, parent_id: number | null, modular_data: any }, userId?: number, canViewAll: boolean = false): Promise<void> {
     const { name, parent_id, modular_data } = data;
     const isId = /^\d+$/.test(idOrSlug);
     
     const transaction = db.transaction(() => {
-      const element = db.prepare(`SELECT id, type_id FROM elements WHERE ${isId ? "id" : "slug"} = ?`).get(idOrSlug) as any;
-      if (!element) throw new Error("Element not found");
+      let query = `SELECT id, type_id FROM elements WHERE ${isId ? "id" : "slug"} = ?`;
+      const params: any[] = [idOrSlug];
+      
+      if (!canViewAll && userId) {
+        query += ` AND (user_id = ? OR user_id IS NULL)`;
+        params.push(userId);
+      }
+      
+      const element = db.prepare(query).get(...params) as any;
+      if (!element) throw new Error("Element not found or permission denied");
       const elementId = element.id;
 
       db.prepare("UPDATE elements SET name = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(name, parent_id, elementId);
@@ -169,9 +216,20 @@ export class ElementService implements IElementService {
     transaction();
   }
 
-  async deleteElement(idOrSlug: string): Promise<void> {
+  async deleteElement(idOrSlug: string, userId?: number, canViewAll: boolean = false): Promise<void> {
     const isId = /^\d+$/.test(idOrSlug);
-    db.prepare(`DELETE FROM elements WHERE ${isId ? "id" : "slug"} = ?`).run(idOrSlug);
+    let query = `SELECT id FROM elements WHERE ${isId ? "id" : "slug"} = ?`;
+    const params: any[] = [idOrSlug];
+    
+    if (!canViewAll && userId) {
+      query += ` AND (user_id = ? OR user_id IS NULL)`;
+      params.push(userId);
+    }
+    
+    const element = db.prepare(query).get(...params) as any;
+    if (!element) throw new Error("Element not found or permission denied");
+    
+    db.prepare("DELETE FROM elements WHERE id = ?").run(element.id);
   }
 
   async getAllGraphEdges(): Promise<GraphEdge[]> {

@@ -1,32 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "motion/react";
 import { ArrowRight, Database, Layers, Zap, Shield, LogOut, User as UserIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Element, User } from "../../types";
-import { themeUtils } from "./utils";
+import { User } from "../../types";
+import { useTheme } from "../ThemeContext";
+import { TemplatePart } from "../TemplatePart";
 
 export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
-  const [featuredElements, setFeaturedElements] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const topLevel = await themeUtils.getTopLevelElements();
-      
-      // Fetch details for each top-level element to get content/descriptions
-      const detailedElements = await Promise.all(
-        topLevel.map(async (el) => {
-          const detail = await themeUtils.getElementBySlug(el.slug);
-          return detail || el;
-        })
-      );
-      
-      setFeaturedElements(detailedElements);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
+  const { get_posts, get_meta, get_header, get_footer } = useTheme();
+  
+  const featuredElements = get_posts({ limit: 6 });
+  const header = get_header();
+  const footer = get_footer();
 
   return (
     <div className="min-h-screen bg-white">
@@ -36,7 +21,7 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
           <div className="w-10 h-10 bg-marine rounded-xl flex items-center justify-center text-brand-yellow shadow-lg">
             <Database size={24} />
           </div>
-          <span className="text-xl font-black tracking-tight text-marine">FlexCatalog</span>
+          <span className="text-xl font-black tracking-tight text-marine">Catalog</span>
         </div>
         <div className="flex items-center gap-4">
           {currentUser ? (
@@ -67,6 +52,13 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
           )}
         </div>
       </nav>
+
+      {/* Header Template Part (Optional) */}
+      {header && (
+        <div className="bg-marine text-brand-yellow px-6 py-2 text-center text-xs font-bold uppercase tracking-widest">
+          <TemplatePart element={header} />
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
@@ -146,7 +138,7 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-end justify-between mb-16">
             <div>
-              <h2 className="text-4xl font-black text-marine tracking-tight">Featured Publications & Businesses</h2>
+              <h2 className="text-4xl font-black text-marine tracking-tight">Featured Catalog Elements</h2>
               <p className="text-zinc-500 mt-2">Discover the latest additions to our catalog.</p>
             </div>
             <Link to="/admin" className="text-marine font-bold hover:underline flex items-center gap-2">
@@ -154,56 +146,54 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
             </Link>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-64 bg-zinc-50 rounded-3xl animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {featuredElements.map((el) => (
-                <Link 
-                  key={el.id} 
-                  to={`/e/${el.slug}`}
-                  className="group bg-white border border-zinc-100 rounded-3xl p-8 hover:shadow-2xl hover:border-marine/10 transition-all flex flex-col"
-                >
-                  <div className="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 mb-6 group-hover:bg-marine group-hover:text-brand-yellow transition-colors">
-                    <Database size={24} />
-                  </div>
-                  <h4 className="text-xl font-bold text-marine mb-2">{el.name}</h4>
-                  <p className="text-zinc-500 text-sm line-clamp-3 mb-6 flex-grow">
-                    {el.content?.body || `Explore the details and relationships of this ${el.type_name.toLowerCase()}.`}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-bold text-marine group-hover:gap-4 transition-all mt-auto">
-                    Learn More <ArrowRight size={16} />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featuredElements.map((el) => (
+              <Link 
+                key={el.id} 
+                to={`/e/${el.slug}`}
+                className="group bg-white border border-zinc-100 rounded-3xl p-8 hover:shadow-2xl hover:border-marine/10 transition-all flex flex-col"
+              >
+                <div className="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 mb-6 group-hover:bg-marine group-hover:text-brand-yellow transition-colors">
+                  <Database size={24} />
+                </div>
+                <h4 className="text-xl font-bold text-marine mb-2">{el.name}</h4>
+                <p className="text-zinc-500 text-sm line-clamp-3 mb-6 flex-grow">
+                  {get_meta(el, 'body') || `Explore the details and relationships of this ${el.type_name.toLowerCase()}.`}
+                </p>
+                <div className="flex items-center gap-2 text-sm font-bold text-marine group-hover:gap-4 transition-all mt-auto">
+                  Learn More <ArrowRight size={16} />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-marine py-20 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-marine-light rounded-xl flex items-center justify-center text-brand-yellow">
-                <Database size={24} />
-              </div>
-              <span className="text-xl font-black tracking-tight">FlexCatalog</span>
-            </div>
-            <div className="flex gap-12 text-sm font-bold text-white/60">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Contact Us</a>
-            </div>
-            <p className="text-sm text-white/40">© 2026 FlexCatalog. All rights reserved.</p>
-          </div>
+      {footer ? (
+        <div className="bg-marine text-white px-6 py-20">
+          <TemplatePart element={footer} />
         </div>
-      </footer>
+      ) : (
+        <footer className="bg-marine py-20 text-white">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-marine-light rounded-xl flex items-center justify-center text-brand-yellow">
+                  <Database size={24} />
+                </div>
+                <span className="text-xl font-black tracking-tight">Catalog</span>
+              </div>
+              <div className="flex gap-12 text-sm font-bold text-white/60">
+                <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+                <a href="#" className="hover:text-white transition-colors">Contact Us</a>
+              </div>
+              <p className="text-sm text-white/40">© 2026 Catalog. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 };

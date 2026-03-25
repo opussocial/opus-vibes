@@ -1,32 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Database, Layers, Zap, Shield, LogOut, User as UserIcon, ExternalLink, Heart, MessageSquare } from "lucide-react";
+import { ArrowRight, Database, Layers, Zap, Shield, LogOut, ExternalLink, Heart, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Element, User } from "../../types";
-import { themeUtils } from "./utils";
+import { User } from "../../types";
+import { useTheme } from "../ThemeContext";
+import { TemplatePart } from "../TemplatePart";
 
 export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
-  const [featuredElements, setFeaturedElements] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const topLevel = await themeUtils.getTopLevelElements();
-      
-      // Fetch details for each top-level element to get content/descriptions
-      const detailedElements = await Promise.all(
-        topLevel.map(async (el) => {
-          const detail = await themeUtils.getElementBySlug(el.slug);
-          return detail || el;
-        })
-      );
-      
-      setFeaturedElements(detailedElements);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
+  const { get_posts, get_meta, get_header, get_footer } = useTheme();
+  
+  const featuredElements = get_posts({ limit: 6 });
+  const header = get_header();
+  const footer = get_footer();
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-500 selection:text-white">
@@ -36,7 +21,7 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
             <Database size={18} />
           </div>
-          <span className="text-lg font-bold tracking-tight text-slate-900">FlexCatalog</span>
+          <span className="text-lg font-bold tracking-tight text-slate-900">Modern Catalog</span>
         </div>
         
         <div className="flex items-center gap-8">
@@ -70,6 +55,13 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
           </div>
         </div>
       </nav>
+
+      {/* Header Template Part (Optional) */}
+      {header && (
+        <div className="bg-indigo-900 text-white px-8 py-2 text-center text-xs font-bold uppercase tracking-widest">
+          <TemplatePart element={header} />
+        </div>
+      )}
 
       {/* Hero */}
       <main>
@@ -151,75 +143,74 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
         <section className="px-8 py-24">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-12">
-              <h2 className="text-3xl font-bold text-slate-900">Featured Publications & Businesses</h2>
+              <h2 className="text-3xl font-bold text-slate-900">Featured Catalog Elements</h2>
               <Link to="/admin" className="text-indigo-600 font-bold flex items-center gap-2 hover:gap-3 transition-all">
                 Manage Catalog <ArrowRight size={18} />
               </Link>
             </div>
 
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {featuredElements.map(el => (
-                  <Link 
-                    key={el.id} 
-                    to={`/e/${el.slug}`}
-                    className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-indigo-600 transition-all hover:shadow-2xl hover:shadow-indigo-600/5 flex flex-col"
-                  >
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                        {el.type_name}
-                      </div>
-                      <ExternalLink size={16} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredElements.map(el => (
+                <Link 
+                  key={el.id} 
+                  to={`/e/${el.slug}`}
+                  className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-indigo-600 transition-all hover:shadow-2xl hover:shadow-indigo-600/5 flex flex-col"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                      {el.type_name}
                     </div>
-                    <h4 className="text-xl font-bold text-slate-900 mb-2">{el.name}</h4>
-                    <p className="text-slate-500 text-sm mb-6 line-clamp-3 flex-grow">
-                      {el.content?.body || `Explore the details of this ${el.type_name.toLowerCase()} in our catalog.`}
-                    </p>
-                    <div className="h-px w-full bg-slate-100 mb-6" />
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm font-bold text-indigo-600">
-                        View Details
+                    <ExternalLink size={16} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                  </div>
+                  <h4 className="text-xl font-bold text-slate-900 mb-2">{el.name}</h4>
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-3 flex-grow">
+                    {get_meta(el, 'body') || `Explore the details of this ${el.type_name.toLowerCase()} in our catalog.`}
+                  </p>
+                  <div className="h-px w-full bg-slate-100 mb-6" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-bold text-indigo-600">
+                      View Details
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+                        <Heart size={14} className="text-rose-500" />
+                        {el.interactions?.filter((i: any) => i.type_name === 'Like').length || 0}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
-                          <Heart size={14} className="text-rose-500" />
-                          {el.interactions?.filter((i: any) => i.type_name.toLowerCase() === 'like').length || 0}
-                        </div>
-                        <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
-                          <MessageSquare size={14} className="text-indigo-500" />
-                          {el.interactions?.filter((i: any) => i.type_name.toLowerCase() === 'comment').length || 0}
-                        </div>
+                      <div className="flex items-center gap-1 text-slate-400 text-xs font-bold">
+                        <MessageSquare size={14} className="text-indigo-500" />
+                        {el.interactions?.filter((i: any) => i.type_name === 'Comment').length || 0}
                       </div>
                     </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="px-8 py-16 border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white">
-              <Database size={14} />
-            </div>
-            <span className="font-bold text-slate-900">FlexCatalog</span>
-          </div>
-          <p className="text-sm text-slate-500">© 2026 FlexCatalog. Built with Tailwind CSS.</p>
-          <div className="flex gap-6">
-            <a href="#" className="text-slate-400 hover:text-indigo-600 transition-colors"><Zap size={20} /></a>
-            <a href="#" className="text-slate-400 hover:text-indigo-600 transition-colors"><Shield size={20} /></a>
-          </div>
+      {/* Footer Template Part (Optional) */}
+      {footer ? (
+        <div className="bg-slate-900 text-white px-8 py-12">
+          <TemplatePart element={footer} />
         </div>
-      </footer>
+      ) : (
+        <footer className="px-8 py-16 border-t border-slate-200 bg-white">
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white">
+                <Database size={14} />
+              </div>
+              <span className="font-bold text-slate-900">Modern Catalog</span>
+            </div>
+            <p className="text-sm text-slate-500">© 2026 Modern Catalog. Built with Theme Helpers.</p>
+            <div className="flex gap-6">
+              <a href="#" className="text-slate-400 hover:text-indigo-600 transition-colors"><Zap size={20} /></a>
+              <a href="#" className="text-slate-400 hover:text-indigo-600 transition-colors"><Shield size={20} /></a>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 };

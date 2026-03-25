@@ -35,7 +35,7 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-white text-xl font-medium">
             <Database size={24} className="text-[#0d6efd]" />
-            FlexCatalog
+            Bootstrap Catalog
           </Link>
           
           <div className="flex items-center gap-4">
@@ -67,7 +67,7 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
       <header className="bg-[#f8f9fa] py-24 border-b border-zinc-200">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
-            <h1 className="text-6xl font-light text-[#212529] mb-4">Welcome to FlexCatalog</h1>
+            <h1 className="text-6xl font-light text-[#212529] mb-4">Welcome to our Catalog</h1>
             <p className="text-xl text-[#6c757d] mb-8 leading-relaxed">
               This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.
             </p>
@@ -164,7 +164,7 @@ export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLo
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-200">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-[#6c757d] text-sm">
-          <p>© 2026 FlexCatalog, Inc. · <a href="#" className="text-[#0d6efd] hover:underline">Privacy</a> · <a href="#" className="text-[#0d6efd] hover:underline">Terms</a></p>
+          <p>© 2026 Catalog, Inc. · <a href="#" className="text-[#0d6efd] hover:underline">Privacy</a> · <a href="#" className="text-[#0d6efd] hover:underline">Terms</a></p>
           <p><a href="#" className="text-[#0d6efd] hover:underline">Back to top</a></p>
         </div>
       </footer>

@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { Search, Database } from "lucide-react";
-import { Element, ElementType, TypePermission } from "../types";
+import { Element, ElementType, TypePermission, User } from "../types";
 import { DataTable } from "./common/DataTable";
 
 interface DashboardProps {
@@ -10,15 +10,18 @@ interface DashboardProps {
   types: ElementType[];
   getTypePermission: (typeId: number) => TypePermission;
   handleDelete: (slug: string) => void;
+  currentUser: User | null;
 }
 
 export const Dashboard = ({ 
   elements, 
   types,
   getTypePermission, 
-  handleDelete
+  handleDelete,
+  currentUser
 }: DashboardProps) => {
   const navigate = useNavigate();
+  const canViewAll = currentUser?.permissions?.includes("view_all_elements");
 
   return (
     <motion.div
@@ -30,8 +33,14 @@ export const Dashboard = ({
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight text-marine">Catalog Elements</h2>
-          <p className="text-zinc-500 mt-2 text-lg">Manage all your modular content elements here.</p>
+          <h2 className="text-4xl font-bold tracking-tight text-marine">
+            {canViewAll ? "All Catalog Elements" : "My Catalog Elements"}
+          </h2>
+          <p className="text-zinc-500 mt-2 text-lg">
+            {canViewAll 
+              ? "Viewing all modular content elements in the system." 
+              : "Manage your modular content elements here."}
+          </p>
         </div>
         <div className="flex gap-3">
           <div className="relative w-full md:w-80">

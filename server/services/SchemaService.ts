@@ -45,6 +45,15 @@ export class SchemaService implements ISchemaService {
         }
       }
 
+      // Grant permissions to super-admin
+      const adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
+      if (adminRole) {
+        db.prepare(`
+          INSERT OR IGNORE INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete)
+          VALUES (?, ?, 1, 1, 1, 1)
+        `).run(adminRole.id, typeId);
+      }
+
       return typeId;
     });
     

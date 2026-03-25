@@ -72,7 +72,7 @@ export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | nul
         <div className="container">
           <Link to="/" className="navbar-brand flex items-center gap-2 text-white text-xl font-medium">
             <Database size={24} className="text-primary" />
-            FlexCatalog
+            Bootstrap Catalog
           </Link>
         </div>
         <style>{`

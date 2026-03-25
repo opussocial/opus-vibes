@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 
-import { initDb } from "./server/db";
+import { initDb, db } from "./server/db";
 import { authMiddleware } from "./server/middleware";
 
 // Routes

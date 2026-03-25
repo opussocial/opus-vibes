@@ -1,0 +1,11 @@
+import Database from "better-sqlite3";
+const db = new Database("cms.db");
+const elements = db.prepare("SELECT e.*, t.name as type_name FROM elements e JOIN element_types t ON e.type_id = t.id").all();
+const types = db.prepare("SELECT * FROM element_types").all();
+const users = db.prepare("SELECT * FROM users").all();
+const roles = db.prepare("SELECT * FROM roles").all();
+const role_permissions = db.prepare("SELECT * FROM role_permissions").all();
+const role_type_permissions = db.prepare("SELECT * FROM role_type_permissions").all();
+const permissions = db.prepare("SELECT * FROM permissions").all();
+const type_hierarchy = db.prepare("SELECT * FROM type_hierarchy").all();
+console.log(JSON.stringify({ elements, types, users, roles, permissions, role_permissions, role_type_permissions, type_hierarchy }, null, 2));
