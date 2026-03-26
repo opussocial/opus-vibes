@@ -5,7 +5,7 @@ import { ArrowLeft, Database, Calendar, Tag, Share2, MoreHorizontal, ChevronRigh
 import { ElementDetail, User } from "../../types";
 import { themeUtils } from "./utils";
 
-export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
+export const ElementPage = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { slug } = useParams<{ slug: string }>();
   const [element, setElement] = useState<ElementDetail | null>(null);
   const [loading, setLoading] = useState(true);

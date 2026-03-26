@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Database, LogOut } from "lucide-react";
 import { User } from "../../types";
 
-export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
+export const Home = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const [stats, setStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

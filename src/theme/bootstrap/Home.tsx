@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Element, User } from "../../types";
 import { themeUtils } from "./utils";
 
-export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
+export const Home = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const [featuredElements, setFeaturedElements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

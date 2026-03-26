@@ -18,7 +18,7 @@ import {
 import { User } from "../../types";
 import { useTheme } from "../ThemeContext";
 
-export const Home = ({ currentUser, settings }: { currentUser: User | null, settings: Record<string, any> }) => {
+export const Home = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { elements, types } = useTheme();
   
   // Find the main hostel element based on settings or default

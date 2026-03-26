@@ -21,7 +21,7 @@ import { ElementDetail, User } from "../../types";
 import { useTheme } from "../ThemeContext";
 import { TemplatePart } from "../TemplatePart";
 
-export const ElementPage = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
+export const ElementPage = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { get_element, get_meta, get_children, get_related, get_header, get_footer } = useTheme();

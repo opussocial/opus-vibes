@@ -6,7 +6,7 @@ import { User } from "../../types";
 import { useTheme } from "../ThemeContext";
 import { TemplatePart } from "../TemplatePart";
 
-export const Home = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
+export const Home = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { get_posts, get_meta, get_header, get_footer, get_setting, get_element } = useTheme();
   
   // Magazine-specific data fetching

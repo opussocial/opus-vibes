@@ -78,11 +78,11 @@ export const ThemeEngine = ({
   return (
     <div className="theme-ui">
       <Routes>
-        <Route path="/" element={themeParam ? <Home currentUser={currentUser} onLogout={onLogout} /> : <Portal currentUser={currentUser} />} />
-        <Route path="/home" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
-        <Route path="/explore" element={Explore ? <Explore currentUser={currentUser} onLogout={onLogout} /> : <Home currentUser={currentUser} onLogout={onLogout} />} />
-        <Route path="/e/:slug" element={<ElementPage currentUser={currentUser} onLogout={onLogout} />} />
-        <Route path="*" element={<Home currentUser={currentUser} onLogout={onLogout} />} />
+        <Route path="/" element={themeParam ? <Home currentUser={currentUser} onLogout={onLogout} settings={settings} /> : <Portal currentUser={currentUser} />} />
+        <Route path="/home" element={<Home currentUser={currentUser} onLogout={onLogout} settings={settings} />} />
+        <Route path="/explore" element={Explore ? <Explore currentUser={currentUser} onLogout={onLogout} settings={settings} /> : <Home currentUser={currentUser} onLogout={onLogout} settings={settings} />} />
+        <Route path="/e/:slug" element={<ElementPage currentUser={currentUser} onLogout={onLogout} settings={settings} />} />
+        <Route path="*" element={<Home currentUser={currentUser} onLogout={onLogout} settings={settings} />} />
       </Routes>
     </div>
   );

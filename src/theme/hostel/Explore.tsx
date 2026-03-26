@@ -22,7 +22,7 @@ import {
 import { Element, ElementType, User } from "../../types";
 import { useTheme } from "../ThemeContext";
 
-export const Explore = ({ currentUser }: { currentUser: User | null }) => {
+export const Explore = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { elements, types } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");

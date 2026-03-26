@@ -16,7 +16,7 @@ import {
 import { useTheme } from "../ThemeContext";
 import { User } from "../../types";
 
-export const ElementPage = ({ currentUser }: { currentUser: User | null }) => {
+export const ElementPage = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { elements, types } = useTheme();

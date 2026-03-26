@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { User, Element, ElementType } from "../../types";
 
-export const Explore = ({ currentUser, onLogout }: { currentUser: User | null, onLogout: () => void }) => {
+export const Explore = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const [elements, setElements] = useState<Element[]>([]);
   const [types, setTypes] = useState<ElementType[]>([]);
   const [loading, setLoading] = useState(true);

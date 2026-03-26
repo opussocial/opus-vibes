@@ -16,7 +16,7 @@ import {
 import { useTheme } from "../ThemeContext";
 import { User } from "../../types";
 
-export const Home = ({ currentUser }: { currentUser: User | null }) => {
+export const Home = ({ currentUser, onLogout, settings }: { currentUser: User | null, onLogout: () => void, settings: Record<string, any> }) => {
   const { elements, types } = useTheme();
 
   // Filter elements for the "Magazine" section (e.g., articles, stories)
