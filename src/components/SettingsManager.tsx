@@ -27,6 +27,14 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
   const [newSetting, setNewSetting] = useState({ key: "", value: "" });
   const [viewingSetting, setViewingSetting] = useState<{ key: string, value: any } | null>(null);
   const [users, setUsers] = useState<UserType[]>([]);
+  const [elements, setElements] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/elements")
+      .then(res => res.json())
+      .then(data => setElements(data))
+      .catch(err => console.error("Error fetching elements:", err));
+  }, []);
 
   useEffect(() => {
     setScope(initialScope);
@@ -246,6 +254,9 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
                 <option value="default">Default Theme (Modern)</option>
                 <option value="tailwind">Tailwind Theme (SaaS)</option>
                 <option value="bootstrap">Bootstrap Theme (Classic)</option>
+                <option value="magazine">Magazine Theme (Editorial)</option>
+                <option value="hostel">Hostel Theme (CMS Dashboard)</option>
+                <option value="bootstrap-barebones">Bootstrap Barebones (Barebones)</option>
               </select>
             </div>
           </div>
@@ -257,12 +268,24 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
             </div>
             <p className="text-sm text-zinc-500">The element displayed on the root URL.</p>
             <div className="flex gap-3">
-              <input 
-                type="text"
+              <select
                 value={settings["home_element"] || ""}
-                readOnly
-                className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-500 font-mono text-sm"
-              />
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  await fetch(`/api/settings/home_element`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ value: val })
+                  });
+                  fetchSettings();
+                }}
+                className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/5 font-bold text-marine"
+              >
+                <option value="">Default (First Hostel found)</option>
+                {elements.map(el => (
+                  <option key={el.id} value={el.slug}>{el.name} ({el.type_name})</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

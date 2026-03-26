@@ -8,7 +8,7 @@ export class ElementService implements IElementService {
     if (!canViewAll && allowedTypeIds.length === 0) return [];
     
     let query = `
-      SELECT e.*, t.name as type_name 
+      SELECT e.*, t.name as type_name, t.slug as type_slug 
       FROM elements e 
       JOIN element_types t ON e.type_id = t.id
     `;
@@ -35,7 +35,7 @@ export class ElementService implements IElementService {
     if (!canViewAll && allowedTypeIds.length === 0) return [];
     
     let query = `
-      SELECT e.*, t.name as type_name 
+      SELECT e.*, t.name as type_name, t.slug as type_slug 
       FROM elements e 
       JOIN element_types t ON e.type_id = t.id
       WHERE e.parent_id IS NULL
@@ -62,7 +62,7 @@ export class ElementService implements IElementService {
   async getElement(idOrSlug: string, userId?: number, canViewAll: boolean = false): Promise<any> {
     const isId = /^\d+$/.test(idOrSlug);
     let query = `
-      SELECT e.*, t.name as type_name 
+      SELECT e.*, t.name as type_name, t.slug as type_slug 
       FROM elements e 
       JOIN element_types t ON e.type_id = t.id
       WHERE e.${isId ? "id" : "slug"} = ?
@@ -151,8 +151,8 @@ export class ElementService implements IElementService {
     `).all(element.id, element.id) as GraphEdge[];
   }
 
-  async createElement(data: { name: string, type_id: number, parent_id: number | null, modular_data: any }, userId?: number): Promise<number> {
-    const { name, type_id, parent_id, modular_data } = data;
+  async createElement(data: { name: string, type_id: number, parent_id: number | null, status?: string, modular_data: any }, userId?: number): Promise<number> {
+    const { name, type_id, parent_id, status, modular_data } = data;
     const baseSlug = slugify(name);
     
     const transaction = db.transaction(() => {
@@ -162,7 +162,7 @@ export class ElementService implements IElementService {
         slug = `${baseSlug}-${counter++}`;
       }
 
-      const elementId = db.prepare("INSERT INTO elements (name, slug, type_id, user_id, parent_id) VALUES (?, ?, ?, ?, ?)").run(name, slug, type_id, userId || null, parent_id).lastInsertRowid as number;
+      const elementId = db.prepare("INSERT INTO elements (name, slug, type_id, user_id, parent_id, status) VALUES (?, ?, ?, ?, ?, ?)").run(name, slug, type_id, userId || null, parent_id, status || null).lastInsertRowid as number;
       const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(type_id) as any[];
       for (const prop of props) {
         const table = prop.table_name;
@@ -183,8 +183,8 @@ export class ElementService implements IElementService {
     return transaction();
   }
 
-  async updateElement(idOrSlug: string, data: { name: string, parent_id: number | null, modular_data: any }, userId?: number, canViewAll: boolean = false): Promise<void> {
-    const { name, parent_id, modular_data } = data;
+  async updateElement(idOrSlug: string, data: { name: string, parent_id: number | null, status?: string, modular_data: any }, userId?: number, canViewAll: boolean = false): Promise<void> {
+    const { name, parent_id, status, modular_data } = data;
     const isId = /^\d+$/.test(idOrSlug);
     
     const transaction = db.transaction(() => {
@@ -200,7 +200,7 @@ export class ElementService implements IElementService {
       if (!element) throw new Error("Element not found or permission denied");
       const elementId = element.id;
 
-      db.prepare("UPDATE elements SET name = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(name, parent_id, elementId);
+      db.prepare("UPDATE elements SET name = ?, parent_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(name, parent_id, status || null, elementId);
       const props = db.prepare("SELECT table_name FROM properties WHERE type_id = ?").all(element.type_id) as any[];
       for (const prop of props) {
         const table = prop.table_name;

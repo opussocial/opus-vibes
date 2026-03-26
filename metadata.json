@@ -1,5 +1,5 @@
 {
-  "name": "FlexCatalog CMS",
-  "description": "A flexible PIM/CMS with dynamic element types and modular properties.",
+  "name": "Multi-Type CMS Demo",
+  "description": "A demonstration of a flexible CMS handling diverse content types with a Bootstrap theme.",
   "requestFramePermissions": ["geolocation"]
 }

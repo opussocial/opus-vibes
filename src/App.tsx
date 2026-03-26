@@ -54,6 +54,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isDefaultSettingsSet = React.useRef(false);
   
   // Missing states for creation
   const [newType, setNewType] = useState<Partial<ElementType>>({ 
@@ -81,7 +82,7 @@ export default function App() {
 
   // Set default settings if not set
   useEffect(() => {
-    if (elements.length > 0 && currentUser?.permissions.includes("manage_types")) {
+    if (elements.length > 0 && currentUser?.permissions.includes("manage_types") && !isDefaultSettingsSet.current) {
       const updates: Record<string, string> = {};
       
       if (!settings["home_element"]) {
@@ -90,10 +91,11 @@ export default function App() {
       }
       
       if (!settings["active_theme"]) {
-        updates["active_theme"] = "magazine";
+        updates["active_theme"] = "hostel";
       }
 
       if (Object.keys(updates).length > 0) {
+        isDefaultSettingsSet.current = true;
         Promise.all(
           Object.entries(updates).map(([key, value]) => 
             fetch(`/api/settings/${key}`, {

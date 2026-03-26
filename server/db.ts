@@ -11,6 +11,8 @@ export const db = new Database("cms.db");
 
 export function initDb() {
   console.log("[DEBUG] initDb started");
+  
+  // 1. Core Tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,12 +46,15 @@ export function initDb() {
       settings TEXT -- JSON object
     );
 
-    CREATE TABLE IF NOT EXISTS properties (
+    CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type_id INTEGER NOT NULL,
-      table_name TEXT NOT NULL,
-      label TEXT NOT NULL,
-      FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT,
+      google_id TEXT UNIQUE,
+      role_id INTEGER NOT NULL,
+      profile_element_id INTEGER,
+      FOREIGN KEY (role_id) REFERENCES roles(id)
     );
 
     CREATE TABLE IF NOT EXISTS elements (
@@ -67,6 +72,14 @@ export function initDb() {
       FOREIGN KEY (parent_id) REFERENCES elements(id) ON DELETE SET NULL
     );
 
+    CREATE TABLE IF NOT EXISTS properties (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type_id INTEGER NOT NULL,
+      table_name TEXT NOT NULL,
+      label TEXT NOT NULL,
+      FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS role_type_permissions (
       role_id INTEGER NOT NULL,
       type_id INTEGER NOT NULL,
@@ -78,55 +91,7 @@ export function initDb() {
       FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
       FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE
     );
-  `);
 
-  // --- Seed Roles and Permissions FIRST so triggers work ---
-  const rolesToSeed = [
-    { name: "Super Admin", slug: "super-admin", description: "Full system access" },
-    { name: "Editor", slug: "editor", description: "Can edit content" },
-    { name: "Viewer", slug: "viewer", description: "Can only view content" }
-  ];
-
-  for (const role of rolesToSeed) {
-    db.prepare("INSERT OR IGNORE INTO roles (name, slug, description) VALUES (?, ?, ?)").run(role.name, role.slug, role.description);
-  }
-
-  const globalPermissions = [
-    { name: "manage_types", description: "Can manage schema types, app definitions, and settings" },
-    { name: "manage_roles", description: "Can manage roles, users, and global permissions" },
-    { name: "view_all_elements", description: "Can view all elements regardless of ownership" }
-  ];
-
-  for (const perm of globalPermissions) {
-    db.prepare("INSERT OR IGNORE INTO permissions (name, description) VALUES (?, ?)").run(perm.name, perm.description);
-  }
-
-  const adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
-  if (adminRole) {
-    const allPerms = db.prepare("SELECT id FROM permissions").all() as any[];
-    for (const p of allPerms) {
-      db.prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)").run(adminRole.id, p.id);
-    }
-  }
-
-  db.exec(`
-    CREATE TRIGGER IF NOT EXISTS after_type_insert
-    AFTER INSERT ON element_types
-    BEGIN
-      INSERT INTO role_type_permissions (role_id, type_id, can_view, can_create, can_edit, can_delete)
-      SELECT id, NEW.id, 1, (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END), (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END), (CASE WHEN name = 'Super Admin' THEN 1 ELSE 0 END)
-      FROM roles;
-    END;
-  `);
-
-  // Add user_id column if it doesn't exist (for existing databases)
-  try {
-    db.exec("ALTER TABLE elements ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL");
-  } catch (e) {
-    // Column might already exist
-  }
-
-  db.exec(`
     CREATE TABLE IF NOT EXISTS graph_relationship_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       source_type_id INTEGER NOT NULL,
@@ -199,51 +164,6 @@ export function initDb() {
       FOREIGN KEY (element_id) REFERENCES elements(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS roles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      slug TEXT NOT NULL UNIQUE,
-      description TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS permissions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      description TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS role_permissions (
-      role_id INTEGER NOT NULL,
-      permission_id INTEGER NOT NULL,
-      PRIMARY KEY (role_id, permission_id),
-      FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-      FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS role_type_permissions (
-      role_id INTEGER NOT NULL,
-      type_id INTEGER NOT NULL,
-      can_view INTEGER DEFAULT 1,
-      can_create INTEGER DEFAULT 0,
-      can_edit INTEGER DEFAULT 0,
-      can_delete INTEGER DEFAULT 0,
-      PRIMARY KEY (role_id, type_id),
-      FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-      FOREIGN KEY (type_id) REFERENCES element_types(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT,
-      google_id TEXT UNIQUE,
-      role_id INTEGER NOT NULL,
-      profile_element_id INTEGER,
-      FOREIGN KEY (role_id) REFERENCES roles(id),
-      FOREIGN KEY (profile_element_id) REFERENCES elements(id) ON DELETE SET NULL
-    );
-
     CREATE TABLE IF NOT EXISTS interaction_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -296,7 +216,11 @@ export function initDb() {
       UNIQUE(key, type_id, user_id)
     );
 
-    -- Trigger to automatically add default permissions for all roles when a new type is created
+    CREATE TABLE IF NOT EXISTS feature_switches (
+      name TEXT PRIMARY KEY,
+      enabled INTEGER DEFAULT 0
+    );
+
     CREATE TRIGGER IF NOT EXISTS after_type_insert
     AFTER INSERT ON element_types
     BEGIN
@@ -305,6 +229,40 @@ export function initDb() {
       FROM roles;
     END;
   `);
+
+  // Add user_id column if it doesn't exist (for existing databases)
+  try {
+    db.exec("ALTER TABLE elements ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL");
+  } catch (e) {}
+
+  // --- Seed Roles and Permissions FIRST ---
+  const rolesToSeed = [
+    { name: "Super Admin", slug: "super-admin", description: "Full system access" },
+    { name: "Editor", slug: "editor", description: "Can edit content" },
+    { name: "Viewer", slug: "viewer", description: "Can only view content" }
+  ];
+
+  for (const role of rolesToSeed) {
+    db.prepare("INSERT OR IGNORE INTO roles (name, slug, description) VALUES (?, ?, ?)").run(role.name, role.slug, role.description);
+  }
+
+  const globalPermissions = [
+    { name: "manage_types", description: "Can manage schema types, app definitions, and settings" },
+    { name: "manage_roles", description: "Can manage roles, users, and global permissions" },
+    { name: "view_all_elements", description: "Can view all elements regardless of ownership" }
+  ];
+
+  for (const perm of globalPermissions) {
+    db.prepare("INSERT OR IGNORE INTO permissions (name, description) VALUES (?, ?)").run(perm.name, perm.description);
+  }
+
+  const adminRole = db.prepare("SELECT id FROM roles WHERE slug = 'super-admin'").get() as any;
+  if (adminRole) {
+    const allPerms = db.prepare("SELECT id FROM permissions").all() as any[];
+    for (const p of allPerms) {
+      db.prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)").run(adminRole.id, p.id);
+    }
+  }
 
   // Migrations
   try { db.exec("ALTER TABLE elements ADD COLUMN parent_id INTEGER REFERENCES elements(id) ON DELETE SET NULL"); } catch (e) {}
@@ -482,6 +440,12 @@ export function initDb() {
   db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(articleId, "Generative agents are no longer just chatbots; they are becoming autonomous collaborators in the workplace...");
   db.prepare("INSERT OR IGNORE INTO urls_embeds (element_id, url, title) VALUES (?, ?, ?)").run(articleId, "https://ai.google.dev", "Learn more about Gemini");
 
+  const article2Id = ensureElement("The Future of Personal CMS", "future-of-personal-cms", articleType);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(article2Id, "Personal Content Management Systems are evolving to become more than just static sites. They are becoming personal knowledge bases powered by AI.");
+
+  const article3Id = ensureElement("Bootstrap Barebones: A Minimalist Approach", "bootstrap-barebones-minimalist", articleType);
+  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(article3Id, "Sometimes less is more. A barebones Bootstrap theme provides the essential structure without the bloat of modern frameworks.");
+
   const hostelId = ensureElement("The Nomad's Rest", "nomads-rest", hostelType);
   db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(hostelId, "A cozy, community-driven hostel located in the heart of the historic district.");
   db.prepare("INSERT OR IGNORE INTO place (element_id, latitude, longitude, address) VALUES (?, ?, ?, ?)").run(hostelId, 52.3676, 4.9041, "Amsterdam, Netherlands");
@@ -607,7 +571,7 @@ export function initDb() {
 
   const activeThemeSetting = db.prepare("SELECT id FROM settings WHERE key = ? AND type_id IS NULL AND user_id IS NULL").get("active_theme");
   if (!activeThemeSetting) {
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("active_theme", JSON.stringify("default"));
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("active_theme", JSON.stringify("hostel"));
   }
   console.log("[DEBUG] initDb finished");
 }

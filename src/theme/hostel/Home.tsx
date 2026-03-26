@@ -2,269 +2,280 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { 
-  Database, 
   ArrowRight, 
-  Globe, 
-  Users, 
-  Zap, 
   MapPin, 
   Coffee, 
   Wifi, 
   Shield, 
-  Menu,
-  Plus
+  Users,
+  Star,
+  Calendar,
+  Bed,
+  DoorOpen,
+  Waves,
+  Music
 } from "lucide-react";
-import { ElementDetail, User } from "../../types";
+import { User } from "../../types";
 import { useTheme } from "../ThemeContext";
-import { TemplatePart } from "../TemplatePart";
 
-export const Home = ({ currentUser }: { currentUser: User | null }) => {
-  const { get_elements_by_type, get_header, get_footer } = useTheme();
-  const rooms = get_elements_by_type("room");
-  const experiences = get_elements_by_type("experience");
-  const header = get_header();
-  const footer = get_footer();
+export const Home = ({ currentUser, settings }: { currentUser: User | null, settings: Record<string, any> }) => {
+  const { elements, types } = useTheme();
+  
+  // Find the main hostel element based on settings or default
+  const homeSlug = settings?.home_element;
+  const hostel = homeSlug 
+    ? elements.find(e => e.slug === homeSlug) 
+    : (elements.find(e => e.type_slug === 'hostel') || elements[0]);
+  
+  const rooms = elements.filter(e => e.type_slug === 'room' && (hostel ? e.parent_id === hostel.id : true));
+  const experiences = elements.filter(e => e.type_slug === 'artwork' || e.type_slug === 'article').slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gallery-white text-brutal-black font-hostel selection:bg-neon-green selection:text-brutal-black">
-      {/* Brutalist Header */}
-      <header className="border-b-4 border-brutal-black sticky top-0 bg-gallery-white z-50">
-        <div className="flex items-center justify-between h-24 px-8">
-          <Link to="/" className="flex items-center gap-4 group">
-            <div className="w-12 h-12 bg-brutal-black text-neon-green flex items-center justify-center border-2 border-brutal-black group-hover:bg-neon-green group-hover:text-brutal-black transition-colors">
-              <Database size={28} strokeWidth={3} />
-            </div>
-            <span className="text-4xl font-display uppercase tracking-tighter">HOSTEL_X</span>
+    <div className="min-h-screen bg-[#F5F5F0] text-[#1A1A1A] font-sans selection:bg-[#FF6321] selection:text-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-50 bg-[#F5F5F0]/80 backdrop-blur-md border-b border-black/10">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link to="/" className="text-2xl font-black tracking-tighter uppercase italic">
+            {hostel?.name || "HOSTEL_MODERN"}
           </Link>
-
-          <div className="hidden md:flex items-center gap-12">
-            {['Rooms', 'Experiences', 'Community', 'About'].map(item => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="text-sm font-black uppercase tracking-widest hover:text-neon-green transition-colors">
-                {item}
-              </a>
-            ))}
+          
+          <div className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest">
+            <Link to="/explore" className="hover:text-[#FF6321] transition-colors">Rooms</Link>
+            <Link to="/explore?type=experience" className="hover:text-[#FF6321] transition-colors">Experiences</Link>
+            <Link to="/explore?type=amenity" className="hover:text-[#FF6321] transition-colors">Amenities</Link>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             {currentUser ? (
-              <Link to="/admin" className="w-12 h-12 border-4 border-brutal-black flex items-center justify-center hover:bg-neon-green transition-colors">
-                <Users size={24} />
+              <Link to="/admin" className="px-6 py-2 bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#FF6321] transition-all">
+                Dashboard
               </Link>
             ) : (
-              <Link to="/admin" className="px-8 py-3 bg-brutal-black text-neon-green font-black uppercase text-xs tracking-widest border-4 border-brutal-black hover:bg-neon-green hover:text-brutal-black transition-all">
-                Book Now
+              <Link to="/admin" className="px-6 py-2 border-2 border-black text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-all">
+                Login
               </Link>
             )}
-            <button className="md:hidden">
-              <Menu size={32} strokeWidth={3} />
-            </button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero: Split Layout */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 border-b-4 border-brutal-black">
-        <div className="p-12 lg:p-24 border-b-4 lg:border-b-0 lg:border-r-4 border-brutal-black flex flex-col justify-center">
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden pt-20">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1555854816-802f188095e4?auto=format&fit=crop&q=80&w=2000" 
+            alt="Hostel Interior" 
+            className="w-full h-full object-cover grayscale-[0.5] brightness-[0.7]"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+        
+        <div className="relative z-10 text-center px-6">
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-block px-4 py-1 bg-neon-green border-2 border-brutal-black text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-              EST. 2026 / DIGITAL NOMAD HUB
-            </div>
-            <h1 className="text-[12vw] lg:text-[10vw] font-display leading-[0.85] uppercase mb-12 tracking-tighter">
-              BEYOND <br/> <span className="text-neon-green stroke-black stroke-2" style={{ WebkitTextStroke: '2px black' }}>BORDERS</span>
+            <span className="inline-block px-4 py-1 bg-[#FF6321] text-white text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+              EST. 2026 / AMSTERDAM
+            </span>
+            <h1 className="text-[15vw] md:text-[12vw] font-black leading-[0.8] uppercase tracking-tighter text-white mb-8">
+              THE <br/> <span className="italic">NOMAD</span>
             </h1>
-            <p className="text-2xl font-bold leading-tight max-w-md mb-12">
-              A modular living space designed for the next generation of creative explorers. Connect, create, and crash in style.
+            <p className="text-white/80 text-lg md:text-2xl font-medium max-w-2xl mx-auto mb-12">
+              {hostel?.content?.body || "A cozy, community-driven space for the modern traveler. Located in the heart of the historic district."}
             </p>
-            <div className="flex flex-wrap gap-6">
-              <button className="px-10 py-5 bg-neon-green border-4 border-brutal-black text-brutal-black font-black uppercase tracking-widest hover:translate-x-2 hover:-translate-y-2 transition-transform shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                Explore Rooms
-              </button>
-              <button className="px-10 py-5 border-4 border-brutal-black text-brutal-black font-black uppercase tracking-widest hover:bg-brutal-black hover:text-neon-green transition-all">
-                Our Story
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Link to="/explore" className="w-full sm:w-auto px-12 py-5 bg-[#FF6321] text-white font-black uppercase tracking-widest hover:scale-105 transition-transform">
+                Book Your Stay
+              </Link>
+              <button className="w-full sm:w-auto px-12 py-5 border-2 border-white text-white font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">
+                View Gallery
               </button>
             </div>
           </motion.div>
         </div>
-        <div className="relative h-[60vh] lg:h-auto bg-brutal-black overflow-hidden group">
-          <img 
-            src="https://picsum.photos/seed/hostel-hero/1200/1200" 
-            alt="Hostel Life"
-            className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-1000 grayscale hover:grayscale-0"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute bottom-12 left-12 right-12">
-            <div className="bg-neon-green border-4 border-brutal-black p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-              <div className="flex items-center gap-4 mb-4">
-                <MapPin size={24} strokeWidth={3} />
-                <span className="font-black uppercase tracking-widest">Berlin / Kreuzberg</span>
-              </div>
-              <p className="font-bold text-lg">Join 50+ nomads currently staying with us.</p>
-            </div>
+
+        {/* Marquee */}
+        <div className="absolute bottom-0 w-full bg-black py-4 overflow-hidden whitespace-nowrap border-t-2 border-white/20">
+          <div className="animate-marquee inline-block">
+            {[...Array(10)].map((_, i) => (
+              <span key={i} className="text-white text-xs font-black uppercase tracking-[0.5em] mx-12">
+                FREE WIFI • 24/7 RECEPTION • ROOFTOP BAR • CO-WORKING SPACE • BIKE RENTAL • 
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Marquee */}
-      <div className="bg-brutal-black py-6 border-b-4 border-brutal-black overflow-hidden whitespace-nowrap">
-        <div className="inline-block animate-marquee">
-          {[1,2,3,4,5].map(i => (
-            <span key={i} className="text-neon-green text-4xl font-display uppercase mx-12">
-              Fast Wifi • Community Kitchen • Rooftop Bar • Co-working Space • 24/7 Security • 
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Rooms Grid: Brutalist Cards */}
-      <section id="rooms" className="p-8 lg:p-24 bg-gallery-white">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
-          <div>
-            <span className="text-6xl font-display uppercase leading-none block">01</span>
-            <h2 className="text-8xl font-display uppercase leading-none tracking-tighter">THE ROOMS</h2>
+      {/* Stats / Features */}
+      <section className="py-24 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-black/10">
+        <div className="space-y-4">
+          <div className="w-12 h-12 bg-black text-white flex items-center justify-center rounded-full">
+            <MapPin size={24} />
           </div>
-          <p className="max-w-xs font-bold text-lg opacity-60">
-            From shared dorms to private suites, every space is a modular masterpiece.
+          <h3 className="text-xl font-black uppercase italic">Prime Location</h3>
+          <p className="text-sm leading-relaxed opacity-60">
+            Steps away from the central station and the city's most vibrant nightlife and cultural spots.
           </p>
         </div>
+        <div className="space-y-4">
+          <div className="w-12 h-12 bg-black text-white flex items-center justify-center rounded-full">
+            <Coffee size={24} />
+          </div>
+          <h3 className="text-xl font-black uppercase italic">Social Hub</h3>
+          <p className="text-sm leading-relaxed opacity-60">
+            Our common area is designed for meeting people. Free coffee every morning and community dinners twice a week.
+          </p>
+        </div>
+        <div className="space-y-4">
+          <div className="w-12 h-12 bg-black text-white flex items-center justify-center rounded-full">
+            <Shield size={24} />
+          </div>
+          <h3 className="text-xl font-black uppercase italic">Safe & Secure</h3>
+          <p className="text-sm leading-relaxed opacity-60">
+            Individual lockers in every room, 24-hour security, and keycard access for your peace of mind.
+          </p>
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {rooms.map((room, idx) => (
+      {/* Rooms Section */}
+      <section className="py-24 px-6 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <div>
+            <span className="text-[#FF6321] text-xs font-black uppercase tracking-widest block mb-2">Accommodations</span>
+            <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">OUR_ROOMS</h2>
+          </div>
+          <Link to="/explore" className="group flex items-center gap-4 font-black uppercase text-sm tracking-widest border-b-2 border-black pb-2">
+            View All <ArrowRight className="group-hover:translate-x-2 transition-transform" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {rooms.length > 0 ? rooms.map((room, idx) => (
             <motion.div
               key={room.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="group border-4 border-brutal-black bg-gallery-white hover:bg-neon-green transition-colors shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
+              className="group relative"
             >
-              <Link to={`/e/${room.slug}`} className="block">
-                <div className="aspect-square border-b-4 border-brutal-black overflow-hidden">
-                  <img 
-                    src={`https://picsum.photos/seed/${room.slug}/800/800`} 
-                    alt={room.name}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 border-2 border-brutal-black">
-                      {room.type_name}
-                    </span>
-                    <span className="font-mono text-sm font-bold">FROM $45/NT</span>
-                  </div>
-                  <h3 className="text-4xl font-display uppercase leading-none mb-6 group-hover:translate-x-2 transition-transform">{room.name}</h3>
-                  <div className="flex items-center gap-2 font-black uppercase text-[10px] tracking-widest">
-                    View Details <ArrowRight size={14} strokeWidth={3} />
+              <div className="aspect-[16/10] overflow-hidden bg-black mb-6">
+                <img 
+                  src={`https://picsum.photos/seed/${room.slug}/800/500`} 
+                  alt={room.name}
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-3xl font-black uppercase italic mb-2">{room.name}</h3>
+                  <div className="flex items-center gap-4 text-xs font-bold opacity-40 uppercase tracking-widest">
+                    <span className="flex items-center gap-1"><Users size={14} /> 8 Guests</span>
+                    <span className="flex items-center gap-1"><Wifi size={14} /> Free Wi-Fi</span>
                   </div>
                 </div>
-              </Link>
+                <div className="text-right">
+                  <span className="block text-2xl font-black tracking-tighter">€24</span>
+                  <span className="text-[10px] font-bold uppercase opacity-40">Per Night</span>
+                </div>
+              </div>
+              <Link to={`/elements/${room.slug}`} className="absolute inset-0 z-10" />
             </motion.div>
-          ))}
-          
-          {/* Add Room Placeholder */}
-          <Link to="/admin" className="border-4 border-brutal-black border-dashed flex flex-col items-center justify-center p-12 hover:bg-neon-green/10 transition-colors group">
-            <div className="w-20 h-20 rounded-full border-4 border-brutal-black flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Plus size={40} strokeWidth={3} />
+          )) : (
+            <div className="col-span-full py-20 text-center border-2 border-dashed border-black/10">
+              <p className="font-bold uppercase tracking-widest opacity-40">No rooms listed yet.</p>
             </div>
-            <span className="font-black uppercase tracking-widest">Add New Space</span>
-          </Link>
+          )}
         </div>
       </section>
 
-      {/* Features: Icon Grid */}
-      <section className="border-y-4 border-brutal-black grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { icon: <Wifi />, title: "Gigabit Wifi", desc: "Fiber optic everywhere." },
-          { icon: <Coffee />, title: "Free Coffee", desc: "Local roasts all day." },
-          { icon: <Users />, title: "Community", desc: "Weekly nomad meetups." },
-          { icon: <Shield />, title: "Secure", desc: "Smart locks & lockers." }
-        ].map((feat, i) => (
-          <div key={i} className={`p-12 border-brutal-black ${i < 3 ? 'md:border-r-4' : ''} ${i < 2 ? 'lg:border-b-0 border-b-4' : 'border-b-4 lg:border-b-0'} last:border-b-0`}>
-            <div className="w-16 h-16 bg-brutal-black text-neon-green flex items-center justify-center mb-8">
-              {React.cloneElement(feat.icon as React.ReactElement, { size: 32, strokeWidth: 3 })}
-            </div>
-            <h4 className="text-2xl font-display uppercase mb-4">{feat.title}</h4>
-            <p className="font-bold opacity-60">{feat.desc}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* Experiences: Horizontal Scroll or Grid */}
-      <section id="experiences" className="bg-brutal-black text-gallery-white p-8 lg:p-24">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
-          <div>
-            <span className="text-6xl font-display uppercase leading-none block text-neon-green">02</span>
-            <h2 className="text-8xl font-display uppercase leading-none tracking-tighter">LOCAL VIBES</h2>
-          </div>
-          <button className="px-10 py-5 bg-neon-green border-4 border-neon-green text-brutal-black font-black uppercase tracking-widest hover:bg-transparent hover:text-neon-green transition-all">
-            View All Events
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {experiences.slice(0, 2).map((exp, i) => (
-            <div key={exp.id} className="group relative aspect-[16/9] border-4 border-gallery-white overflow-hidden">
-              <img 
-                src={`https://picsum.photos/seed/${exp.slug}/1200/800`} 
-                alt={exp.name}
-                className="w-full h-full object-cover opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 p-12 flex flex-col justify-end bg-gradient-to-t from-brutal-black to-transparent">
-                <span className="text-neon-green font-mono text-sm mb-4">EVERY TUESDAY / 19:00</span>
-                <h3 className="text-5xl font-display uppercase mb-6">{exp.name}</h3>
-                <Link to={`/e/${exp.slug}`} className="inline-flex items-center gap-4 font-black uppercase tracking-widest hover:text-neon-green transition-colors">
-                  Join Event <ArrowRight size={20} strokeWidth={3} />
-                </Link>
+      {/* Experiences Section */}
+      <section className="bg-black text-white py-24 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+            <div>
+              <span className="text-[#FF6321] text-xs font-black uppercase tracking-widest block mb-4">The Vibe</span>
+              <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.85] mb-8">
+                MORE THAN <br/> <span className="text-transparent stroke-white stroke-1" style={{ WebkitTextStroke: '1px white' }}>A BED</span>
+              </h2>
+              <p className="text-white/60 text-lg leading-relaxed mb-12 max-w-md">
+                We curate weekly events from walking tours to pub crawls and live music sessions. Join the community and make memories that last.
+              </p>
+              <div className="space-y-6">
+                {[
+                  { icon: <Waves size={20} />, title: "Canal Tours", time: "Every Tuesday" },
+                  { icon: <Music size={20} />, title: "Live Music", time: "Friday Nights" },
+                  { icon: <Star size={20} />, title: "Pub Crawl", time: "Daily at 9PM" }
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-6 p-4 border border-white/10 hover:bg-white/5 transition-colors">
+                    <div className="text-[#FF6321]">{item.icon}</div>
+                    <div>
+                      <h4 className="font-black uppercase italic">{item.title}</h4>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">{item.time}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+            <div className="relative">
+              <div className="aspect-square bg-[#FF6321] rotate-3 absolute inset-0 -z-10" />
+              <img 
+                src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1000" 
+                alt="Community" 
+                className="w-full h-full object-cover -rotate-3 hover:rotate-0 transition-transform duration-700"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t-4 border-brutal-black bg-gallery-white p-8 lg:p-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-20 mb-32">
-          <div className="lg:col-span-6">
-            <span className="text-[15vw] lg:text-[10vw] font-display uppercase leading-[0.8] tracking-tighter block mb-12">
-              STAY <br/> <span className="text-neon-green" style={{ WebkitTextStroke: '2px black' }}>WIRED.</span>
-            </span>
-            <div className="flex gap-8">
-              {['Instagram', 'Twitter', 'LinkedIn', 'Discord'].map(social => (
-                <a key={social} href="#" className="text-sm font-black uppercase tracking-widest border-b-4 border-transparent hover:border-neon-green transition-all">
-                  {social}
+      <footer className="bg-[#F5F5F0] border-t border-black/10 py-24 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="col-span-1 md:col-span-2">
+            <h2 className="text-4xl font-black tracking-tighter uppercase italic mb-8">
+              {hostel?.name || "HOSTEL_MODERN"}
+            </h2>
+            <p className="text-sm font-medium opacity-60 max-w-xs mb-8">
+              Redefining the hostel experience for a new generation of nomads.
+            </p>
+            <div className="flex gap-4">
+              {['IG', 'TW', 'FB'].map(s => (
+                <a key={s} href="#" className="w-10 h-10 border border-black flex items-center justify-center text-[10px] font-black hover:bg-black hover:text-white transition-all">
+                  {s}
                 </a>
               ))}
             </div>
           </div>
-          <div className="lg:col-span-6 grid grid-cols-2 gap-12">
-            <div>
-              <h5 className="font-black uppercase tracking-widest mb-8 text-xs opacity-40">Navigation</h5>
-              <ul className="space-y-4 font-bold text-lg">
-                <li><a href="#" className="hover:text-neon-green transition-colors">Home</a></li>
-                <li><a href="#" className="hover:text-neon-green transition-colors">Rooms</a></li>
-                <li><a href="#" className="hover:text-neon-green transition-colors">Experiences</a></li>
-                <li><a href="#" className="hover:text-neon-green transition-colors">Admin</a></li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-black uppercase tracking-widest mb-8 text-xs opacity-40">Contact</h5>
-              <ul className="space-y-4 font-bold text-lg">
-                <li>hello@hostelx.com</li>
-                <li>+49 30 123 456 78</li>
-                <li>Reichenberger Str. 123</li>
-                <li>10999 Berlin</li>
-              </ul>
+          <div>
+            <h4 className="font-black uppercase tracking-widest text-xs mb-6">Quick Links</h4>
+            <ul className="space-y-4 text-sm font-bold uppercase tracking-widest opacity-60">
+              <li><Link to="/explore" className="hover:text-[#FF6321]">Rooms</Link></li>
+              <li><Link to="/explore" className="hover:text-[#FF6321]">Experience</Link></li>
+              <li><Link to="/admin" className="hover:text-[#FF6321]">Admin</Link></li>
+              <li><Link to="/explore" className="hover:text-[#FF6321]">Contact</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-black uppercase tracking-widest text-xs mb-6">Newsletter</h4>
+            <div className="flex flex-col gap-4">
+              <input 
+                type="email" 
+                placeholder="YOUR@EMAIL.COM" 
+                className="bg-transparent border-b-2 border-black py-2 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-[#FF6321]"
+              />
+              <button className="px-6 py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#FF6321] transition-all">
+                Subscribe
+              </button>
             </div>
           </div>
         </div>
-        <div className="pt-12 border-t-4 border-brutal-black flex flex-col md:flex-row justify-between items-center gap-8">
-          <span className="text-2xl font-display uppercase">HOSTEL_X © 2026</span>
-          <span className="font-mono text-xs opacity-40 uppercase tracking-widest">Designed for the modular web</span>
+        <div className="max-w-7xl mx-auto mt-24 pt-8 border-t border-black/10 flex flex-col md:flex-row justify-between items-center gap-4">
+          <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">© 2026 {hostel?.name || "HOSTEL_MODERN"}. ALL RIGHTS RESERVED.</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">DESIGNED BY AIS_AGENT</span>
         </div>
       </footer>
 
@@ -281,3 +292,6 @@ export const Home = ({ currentUser }: { currentUser: User | null }) => {
     </div>
   );
 };
+
+export default Home;
+

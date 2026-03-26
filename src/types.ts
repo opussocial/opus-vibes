@@ -25,11 +25,14 @@ export interface Element {
   user_id?: number;
   parent_id?: number;
   type_name: string;
+  type_slug: string;
   name: string;
   slug: string;
   status?: string;
   created_at: string;
   updated_at: string;
+  content?: { body: string };
+  [key: string]: any;
 }
 
 export interface RelationshipType {

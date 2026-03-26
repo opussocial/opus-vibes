@@ -25,8 +25,8 @@ export interface IElementService {
   getChildren(idOrSlug: string): Promise<Element[]>;
   getParent(idOrSlug: string): Promise<Element | null>;
   getGraph(idOrSlug: string): Promise<GraphEdge[]>;
-  createElement(data: { name: string, type_id: number, parent_id: number | null, modular_data: any }, userId?: number): Promise<number>;
-  updateElement(idOrSlug: string, data: { name: string, parent_id: number | null, modular_data: any }, userId?: number, canViewAll?: boolean): Promise<void>;
+  createElement(data: { name: string, type_id: number, parent_id: number | null, status?: string, modular_data: any }, userId?: number): Promise<number>;
+  updateElement(idOrSlug: string, data: { name: string, parent_id: number | null, status?: string, modular_data: any }, userId?: number, canViewAll?: boolean): Promise<void>;
   deleteElement(idOrSlug: string, userId?: number, canViewAll?: boolean): Promise<void>;
   getAllGraphEdges(): Promise<GraphEdge[]>;
   createGraphEdge(data: { rel_type_id: number, source_el_id: number, target_el_id: number }): Promise<number>;

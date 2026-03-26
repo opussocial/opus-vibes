@@ -74,9 +74,9 @@ router.get("/elements/:id/graph", requireAuth, async (req, res) => {
 });
 
 router.post("/elements", requireAuth, checkTypePermission("can_create"), async (req: any, res) => {
-  const { name, type_id, parent_id, modular_data } = req.body;
+  const { name, type_id, parent_id, status, modular_data } = req.body;
   try {
-    const id = await elementService.createElement({ name, type_id, parent_id, modular_data }, req.user.id);
+    const id = await elementService.createElement({ name, type_id, parent_id, status, modular_data }, req.user.id);
     res.json({ id, name, type_id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -84,10 +84,10 @@ router.post("/elements", requireAuth, checkTypePermission("can_create"), async (
 });
 
 router.put("/elements/:id", requireAuth, checkTypePermission("can_edit"), async (req: any, res) => {
-  const { name, parent_id, modular_data } = req.body;
+  const { name, parent_id, status, modular_data } = req.body;
   try {
     const canViewAll = req.user.permissions.includes("view_all_elements");
-    await elementService.updateElement(req.params.id, { name, parent_id, modular_data }, req.user.id, canViewAll);
+    await elementService.updateElement(req.params.id, { name, parent_id, status, modular_data }, req.user.id, canViewAll);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
