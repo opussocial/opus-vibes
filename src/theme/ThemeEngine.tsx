@@ -19,6 +19,8 @@ import * as HostelMagazineElementPage from "./hostel-magazine/ElementPage";
 import * as BootstrapBarebonesHome from "./bootstrap-barebones/Home";
 import * as BootstrapBarebonesElementPage from "./bootstrap-barebones/ElementPage";
 import * as BootstrapBarebonesExplore from "./bootstrap-barebones/Explore";
+import * as BrutalistHome from "./brutalist/Home";
+import * as BrutalistElementPage from "./brutalist/ElementPage";
 import { Portal } from "./Portal";
 
 interface ThemeComponents {
@@ -57,6 +59,10 @@ const THEME_REGISTRY: Record<string, ThemeComponents> = {
     Home: BootstrapBarebonesHome.Home,
     ElementPage: BootstrapBarebonesElementPage.ElementPage,
     Explore: BootstrapBarebonesExplore.Explore,
+  },
+  brutalist: {
+    Home: BrutalistHome.Home,
+    ElementPage: BrutalistElementPage.ElementPage,
   }
 };
 
