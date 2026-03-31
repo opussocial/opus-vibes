@@ -6,6 +6,7 @@ import elementRouter from "../server/routes/elements";
 import schemaRouter from "../server/routes/schema";
 import configRouter from "../server/routes/config";
 import themeRouter from "../server/routes/theme";
+import definitionRouter from "../server/routes/definition";
 import cookieParser from "cookie-parser";
 
 describe("All Teams Integration Flow", () => {
@@ -42,6 +43,7 @@ describe("All Teams Integration Flow", () => {
     app.use("/api/elements", elementRouter);
     app.use("/api/schema", schemaRouter);
     app.use("/api/config", configRouter);
+    app.use("/api/definition", definitionRouter);
     app.use("/api", themeRouter);
   });
 
@@ -87,5 +89,16 @@ describe("All Teams Integration Flow", () => {
       .send({ value: "My New Site" });
     expect(configRes.status).toBe(200);
     expect(configRes.body.success).toBe(true);
+
+    // 5. Definition: Export the app definition
+    statementMock.all.and.callFake((...args: any[]) => {
+      const query = prepareSpy.calls.mostRecent().args[0];
+      if (query.includes("FROM element_types")) return [{ id: 1, slug: "page", name: "Page" }];
+      return [];
+    });
+    const exportRes = await supertest(app).get("/api/definition/export");
+    expect(exportRes.status).toBe(200);
+    expect(exportRes.body.element_types.length).toBe(1);
+    expect(exportRes.body.element_types[0].slug).toBe("page");
   });
 });

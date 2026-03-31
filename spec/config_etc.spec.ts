@@ -58,6 +58,21 @@ describe("Config, Settings & Admin", () => {
       const result = await adminService.getUsers();
       expect(result[0].username).toBe("user");
     });
+
+    it("should create a role", async () => {
+      statementMock.run.and.returnValue({ lastInsertRowid: 1 });
+      statementMock.all.and.returnValue([]); // No types for permissions
+      const id = await adminService.createRole({ name: "Editor", description: "Edits things" });
+      expect(id).toBe(1);
+      expect(db.prepare).toHaveBeenCalledWith(jasmine.stringMatching(/INSERT INTO roles/));
+    });
+
+    it("should update role permissions", async () => {
+      statementMock.get.and.returnValue({ id: 1 });
+      await adminService.updateRolePermissions("1", [1, 2]);
+      expect(db.prepare).toHaveBeenCalledWith(jasmine.stringMatching(/DELETE FROM role_permissions/));
+      expect(db.prepare).toHaveBeenCalledWith(jasmine.stringMatching(/INSERT INTO role_permissions/));
+    });
   });
 
   describe("Routes Integration", () => {
@@ -104,6 +119,16 @@ describe("Config, Settings & Admin", () => {
       statementMock.all.and.returnValue([]);
       const response = await supertest(app).get("/api/admin/users");
       expect(response.status).toBe(200);
+    });
+
+    it("POST /api/admin/roles should create role", async () => {
+      statementMock.run.and.returnValue({ lastInsertRowid: 1 });
+      statementMock.all.and.returnValue([]);
+      const response = await supertest(app)
+        .post("/api/admin/roles")
+        .send({ name: "New Role", description: "Desc" });
+      expect(response.status).toBe(200);
+      expect(response.body.id).toBe(1);
     });
   });
 });
