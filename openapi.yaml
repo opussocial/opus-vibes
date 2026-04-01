@@ -475,3 +475,22 @@ paths:
       responses:
         200:
           description: Edge deleted
+  /theme/home:
+    get:
+      summary: Get homepage data for themes
+      tags: [Themes]
+      responses:
+        200:
+          description: Homepage data
+  /theme/element/{slug}:
+    get:
+      summary: Get element data for theme rendering
+      tags: [Themes]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Element data with parent, children, and neighbors

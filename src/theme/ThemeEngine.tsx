@@ -3,24 +3,10 @@ import { Routes, Route } from "react-router-dom";
 import { User } from "../types";
 
 // Import themes
-import * as DefaultTheme from "./default/Home";
-import * as DefaultElementPage from "./default/ElementPage";
-import * as TailwindTheme from "./tailwind/Home";
-import * as TailwindElementPage from "./tailwind/ElementPage";
-import * as BootstrapTheme from "./bootstrap/Home";
-import * as BootstrapElementPage from "./bootstrap/ElementPage";
-import * as MagazineTheme from "./magazine/Home";
-import * as MagazineElementPage from "./magazine/ElementPage";
-import * as HostelTheme from "./hostel/Home";
-import * as HostelElementPage from "./hostel/ElementPage";
-import * as HostelExplore from "./hostel/Explore";
-import * as HostelMagazineTheme from "./hostel-magazine/Home";
-import * as HostelMagazineElementPage from "./hostel-magazine/ElementPage";
-import * as BootstrapBarebonesHome from "./bootstrap-barebones/Home";
-import * as BootstrapBarebonesElementPage from "./bootstrap-barebones/ElementPage";
-import * as BootstrapBarebonesExplore from "./bootstrap-barebones/Explore";
-import * as BrutalistHome from "./brutalist/Home";
-import * as BrutalistElementPage from "./brutalist/ElementPage";
+import * as FullThemeHome from "./themes/full-theme/Home";
+import * as FullThemeElementPage from "./themes/full-theme/ElementPage";
+import * as MinimalThemeHome from "./themes/minimal-theme/Home";
+import * as MinimalThemeElementPage from "./themes/minimal-theme/ElementPage";
 import { Portal } from "./Portal";
 
 interface ThemeComponents {
@@ -30,39 +16,13 @@ interface ThemeComponents {
 }
 
 const THEME_REGISTRY: Record<string, ThemeComponents> = {
-  default: {
-    Home: DefaultTheme.Home,
-    ElementPage: DefaultElementPage.ElementPage,
+  "full-theme": {
+    Home: FullThemeHome.Home,
+    ElementPage: FullThemeElementPage.ElementPage,
   },
-  tailwind: {
-    Home: TailwindTheme.Home,
-    ElementPage: TailwindElementPage.ElementPage,
-  },
-  bootstrap: {
-    Home: BootstrapTheme.Home,
-    ElementPage: BootstrapElementPage.ElementPage,
-  },
-  magazine: {
-    Home: MagazineTheme.Home,
-    ElementPage: MagazineElementPage.ElementPage,
-  },
-  hostel: {
-    Home: HostelTheme.Home,
-    ElementPage: HostelElementPage.ElementPage,
-    Explore: HostelExplore.Explore,
-  },
-  "hostel-magazine": {
-    Home: HostelMagazineTheme.Home,
-    ElementPage: HostelMagazineElementPage.ElementPage,
-  },
-  "bootstrap-barebones": {
-    Home: BootstrapBarebonesHome.Home,
-    ElementPage: BootstrapBarebonesElementPage.ElementPage,
-    Explore: BootstrapBarebonesExplore.Explore,
-  },
-  brutalist: {
-    Home: BrutalistHome.Home,
-    ElementPage: BrutalistElementPage.ElementPage,
+  "minimal-theme": {
+    Home: MinimalThemeHome.Home,
+    ElementPage: MinimalThemeElementPage.ElementPage,
   }
 };
 
@@ -76,8 +36,8 @@ export const ThemeEngine = ({
   settings: Record<string, any>
 }) => {
   const themeParam = new URLSearchParams(window.location.search).get("theme");
-  const activeThemeName = themeParam || settings.active_theme || "hostel-magazine";
-  const theme = THEME_REGISTRY[activeThemeName] || THEME_REGISTRY["hostel-magazine"];
+  const activeThemeName = themeParam || settings.active_theme || "full-theme";
+  const theme = THEME_REGISTRY[activeThemeName] || THEME_REGISTRY["full-theme"];
 
   const { Home, ElementPage, Explore } = theme as any;
 

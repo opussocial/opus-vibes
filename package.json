@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "tsx node_modules/jasmine/bin/jasmine.js"
+    "test": "tsx node_modules/jasmine/bin/jasmine.js",
+    "test:postman": "newman run postman_collection.json",
+    "test:all": "npm run test && npm run test:postman"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -46,6 +48,7 @@
     "autoprefixer": "^10.4.21",
     "jasmine": "^6.1.0",
     "jasmine-spec-reporter": "^7.0.0",
+    "newman": "^6.2.2",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",

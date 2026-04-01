@@ -378,6 +378,35 @@
 			]
 		},
 		{
+			"name": "Themes",
+			"item": [
+				{
+					"name": "Get Theme Home",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/theme/home",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "theme", "home"]
+						}
+					}
+				},
+				{
+					"name": "Get Theme Element",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/theme/element/test-element",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "theme", "element", "test-element"]
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "Admin",
 			"item": [
 				{

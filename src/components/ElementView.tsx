@@ -8,7 +8,7 @@ import { Interactions } from "./Interactions";
 import { Badge } from "./common/Badge";
 
 import { IconRenderer } from "./common/IconRenderer";
-import { ElementRenderer } from "../theme/default/ElementRenderer";
+// import { ElementRenderer } from "../theme/default/ElementRenderer";
 
 interface ElementViewProps {
   currentUser: User | null;
@@ -109,7 +109,18 @@ export const ElementView = ({ currentUser, types, relTypes }: ElementViewProps) 
         <LucideIcons.Settings size={16} />
         Back to Admin
       </button>
-      <ElementRenderer slug={slug} />
+      <div className="p-12 text-center bg-gray-100 min-h-screen">
+        <h2 className="text-2xl font-bold mb-4">Public Preview</h2>
+        <p className="mb-8 text-gray-600">Previewing: {element.name}</p>
+        <a 
+          href={`/e/${slug}`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-6 py-3 bg-marine text-brand-yellow rounded-xl font-bold hover:bg-marine-light transition-all inline-flex items-center gap-2"
+        >
+          Open in New Tab <LucideIcons.ExternalLink size={16} />
+        </a>
+      </div>
     </div>
   );
 

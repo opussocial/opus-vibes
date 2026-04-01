@@ -84,6 +84,93 @@ describe("Elements", () => {
       expect(id).toBe(10);
       expect(statementMock.run).toHaveBeenCalled();
     });
+
+    it("should update an element and its modular data", async () => {
+      const mockElement = { id: 1, type_id: 1 };
+      statementMock.get.and.returnValue(mockElement);
+      statementMock.run.and.returnValue({ changes: 1 });
+      statementMock.all.and.returnValue([{ table_name: "content" }]);
+      
+      spyOn(db, "transaction").and.callFake((fn: any) => fn);
+
+      const data = {
+        name: "Updated Element",
+        parent_id: null,
+        modular_data: { content: { body: "Updated" } }
+      };
+
+      await elementService.updateElement("1", data, 123, false);
+
+      expect(statementMock.run).toHaveBeenCalled();
+      const queries = prepareSpy.calls.all().map(c => c.args[0]);
+      expect(queries).toContain("UPDATE elements SET name = ?, parent_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    });
+
+    it("should delete an element", async () => {
+      statementMock.get.and.returnValue({ id: 1 });
+      statementMock.run.and.returnValue({ changes: 1 });
+
+      await elementService.deleteElement("1", 123, false);
+
+      expect(statementMock.run).toHaveBeenCalled();
+      const query = prepareSpy.calls.mostRecent().args[0];
+      expect(query).toContain("DELETE FROM elements WHERE id = ?");
+    });
+
+    it("should get children of an element", async () => {
+      statementMock.get.and.returnValue({ id: 1 });
+      statementMock.all.and.returnValue([{ id: 2, name: "Child" }]);
+
+      const children = await elementService.getChildren("1");
+
+      expect(children.length).toBe(1);
+      expect(children[0].name).toBe("Child");
+      const query = prepareSpy.calls.mostRecent().args[0];
+      expect(query).toContain("WHERE e.parent_id = ?");
+    });
+
+    it("should get parent of an element", async () => {
+      statementMock.get.and.callFake((...args: any[]) => {
+        const query = prepareSpy.calls.mostRecent().args[0];
+        if (query.includes("parent_id FROM elements")) return { parent_id: 10 };
+        if (query.includes("SELECT e.*")) return { id: 10, name: "Parent" };
+        return null;
+      });
+
+      const parent = await elementService.getParent("1");
+
+      expect(parent?.id).toBe(10);
+      expect(parent?.name).toBe("Parent");
+    });
+
+    it("should get graph edges for an element", async () => {
+      statementMock.get.and.returnValue({ id: 1 });
+      statementMock.all.and.returnValue([{ id: 100, rel_name: "related" }]);
+
+      const graph = await elementService.getGraph("1");
+
+      expect(graph.length).toBe(1);
+      expect(graph[0].rel_name).toBe("related");
+    });
+
+    it("should create a graph edge", async () => {
+      statementMock.run.and.returnValue({ lastInsertRowid: 50 });
+
+      const id = await elementService.createGraphEdge({ rel_type_id: 1, source_el_id: 1, target_el_id: 2 });
+
+      expect(id).toBe(50);
+      expect(statementMock.run).toHaveBeenCalled();
+    });
+
+    it("should delete a graph edge", async () => {
+      statementMock.run.and.returnValue({ changes: 1 });
+
+      await elementService.deleteGraphEdge(50);
+
+      expect(statementMock.run).toHaveBeenCalled();
+      const query = prepareSpy.calls.mostRecent().args[0];
+      expect(query).toContain("DELETE FROM graph_edges WHERE id = ?");
+    });
   });
 
   describe("Element Routes", () => {

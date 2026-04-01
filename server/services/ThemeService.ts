@@ -16,7 +16,27 @@ export class ThemeService {
       modularData[prop.table_name] = data || {};
     }
 
-    return { ...element, ...modularData, type_name: type.name };
+    // Fetch parent
+    let parent = null;
+    if (element.parent_id) {
+      parent = db.prepare("SELECT id, name, slug, type_id FROM elements WHERE id = ?").get(element.parent_id);
+    }
+
+    // Fetch children
+    const children = db.prepare("SELECT id, name, slug, type_id FROM elements WHERE parent_id = ?").all(element.id);
+
+    // Fetch neighbors (related elements)
+    const neighbors = await this.getRelatedElements(element.id);
+
+    return { 
+      ...element, 
+      ...modularData, 
+      type_name: type.name,
+      type_slug: type.slug,
+      parent,
+      children,
+      neighbors
+    };
   }
 
   async getChildren(parentId: number): Promise<any[]> {
