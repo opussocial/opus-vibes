@@ -49,4 +49,23 @@ router.get("/theme/element/:slug", async (req, res) => {
   }
 });
 
+// Alias for the new frontend structure
+router.get("/theme/element/:type/:id", async (req, res) => {
+  try {
+    const element = await themeService.getElementBySlug(req.params.id);
+    if (!element) return res.status(404).json({ error: "Element not found" });
+    
+    const children = await themeService.getChildren(element.id);
+    const related = await themeService.getRelatedElements(element.id);
+    
+    res.json({ 
+      element,
+      children,
+      related
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

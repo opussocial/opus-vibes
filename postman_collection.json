@@ -393,7 +393,20 @@
 					}
 				},
 				{
-					"name": "Get Theme Element",
+					"name": "Get Theme Element (by slug)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -401,6 +414,31 @@
 							"raw": "{{baseUrl}}/api/theme/element/test-element",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "theme", "element", "test-element"]
+						}
+					}
+				},
+				{
+					"name": "Get Theme Element (by type and id)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/theme/element/page/test-element",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "theme", "element", "page", "test-element"]
 						}
 					}
 				}

@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import { get_header, get_footer, the_title, the_content, the_children, the_neighbors, the_parent } from "../../TemplateTags";
 
 export const ElementPage = ({ settings }: any) => {
-  const { slug } = useParams();
+  const { slug, id } = useParams();
+  const identifier = id || slug;
   const [element, setElement] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -11,7 +12,7 @@ export const ElementPage = ({ settings }: any) => {
     const fetchElement = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/theme/element/${slug}`);
+        const res = await fetch(`/api/theme/element/${identifier}`);
         const data = await res.json();
         setElement(data.element);
       } catch (err) {
@@ -20,8 +21,8 @@ export const ElementPage = ({ settings }: any) => {
         setLoading(false);
       }
     };
-    fetchElement();
-  }, [slug]);
+    if (identifier) fetchElement();
+  }, [identifier]);
 
   if (loading) return <div className="p-8 text-center">Loading...</div>;
   if (!element) return <div className="p-8 text-center">Element not found</div>;

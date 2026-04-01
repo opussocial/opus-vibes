@@ -39,7 +39,7 @@ export const the_children = (element: any) => {
         {element.children.map((child: any) => (
           <Link 
             key={child.id} 
-            to={`/e/${child.slug}`}
+            to={`/element/${child.type_slug || 'default'}/${child.slug}`}
             className="p-4 border rounded hover:shadow-md transition-shadow bg-white"
           >
             {child.name}
@@ -59,7 +59,7 @@ export const the_neighbors = (element: any) => {
         {element.neighbors.map((neighbor: any) => (
           <Link 
             key={neighbor.id} 
-            to={`/e/${neighbor.slug}`}
+            to={`/element/${neighbor.type_slug || 'default'}/${neighbor.slug}`}
             className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm hover:bg-blue-100 transition-colors"
           >
             {neighbor.name}
@@ -74,7 +74,7 @@ export const the_parent = (element: any) => {
   if (!element.parent) return null;
   return (
     <div className="mb-4 text-sm text-gray-500">
-      Parent: <Link to={`/e/${element.parent.slug}`} className="text-blue-600 hover:underline">{element.parent.name}</Link>
+      Parent: <Link to={`/element/${element.parent.type_slug || 'default'}/${element.parent.slug}`} className="text-blue-600 hover:underline">{element.parent.name}</Link>
     </div>
   );
 };
