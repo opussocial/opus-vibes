@@ -443,8 +443,8 @@ export function initDb() {
   const article2Id = ensureElement("The Future of Personal CMS", "future-of-personal-cms", articleType);
   db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(article2Id, "Personal Content Management Systems are evolving to become more than just static sites. They are becoming personal knowledge bases powered by AI.");
 
-  const article3Id = ensureElement("Bootstrap Barebones: A Minimalist Approach", "bootstrap-barebones-minimalist", articleType);
-  db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(article3Id, "Sometimes less is more. A barebones Bootstrap theme provides the essential structure without the bloat of modern frameworks.");
+  const article3Id = ensureElement("Bootstrap Elements: A Minimalist Approach", "bootstrap-minimalist", articleType);
+    db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(article3Id, "Sometimes less is more. A clean structural approach provides the essential structure without the bloat of modern frameworks.");
 
   const hostelId = ensureElement("The Nomad's Rest", "nomads-rest", hostelType);
   db.prepare("INSERT OR IGNORE INTO content (element_id, body) VALUES (?, ?)").run(hostelId, "A cozy, community-driven hostel located in the heart of the historic district.");
@@ -569,9 +569,5 @@ export function initDb() {
     db.prepare("INSERT INTO feature_switches (name, enabled) VALUES (?, ?)").run("homepage_enabled", 1);
   }
 
-  const activeThemeSetting = db.prepare("SELECT id FROM settings WHERE key = ? AND type_id IS NULL AND user_id IS NULL").get("active_theme");
-  if (!activeThemeSetting) {
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("active_theme", JSON.stringify("hostel"));
-  }
   console.log("[DEBUG] initDb finished");
 }

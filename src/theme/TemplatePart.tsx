@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme } from "./ThemeContext";
+import { useTemplate } from "./TemplateContext";
 import { Element } from "../types";
 
 interface TemplatePartProps {
@@ -22,7 +22,7 @@ export const TemplatePart = ({
   fallback,
   components = {}
 }: TemplatePartProps) => {
-  const { get_element, get_elements_by_type } = useTheme();
+  const { get_element, get_elements_by_type } = useTemplate();
 
   let targetElement = element;
 

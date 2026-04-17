@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { Element, ElementType } from "../../src/types";
 
-export class ThemeService {
+export class TemplateService {
   async getElementBySlug(slug: string): Promise<any> {
     const element = db.prepare("SELECT * FROM elements WHERE slug = ?").get(slug) as any;
     if (!element) return null;
@@ -69,4 +69,4 @@ export class ThemeService {
   }
 }
 
-export const themeService = new ThemeService();
+export const templateService = new TemplateService();

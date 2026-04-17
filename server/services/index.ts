@@ -8,7 +8,7 @@ import { DefinitionService } from "./DefinitionService";
 import { SettingsService } from "./SettingsService";
 import { ConfigService } from "./ConfigService";
 import { featureService } from "./FeatureService";
-import { themeService } from "./ThemeService";
+import { templateService } from "./TemplateService";
 
 export const authService = new AuthService();
 export const schemaService = new SchemaService();
@@ -19,6 +19,6 @@ export const queueService = new QueueService();
 export const definitionService = new DefinitionService();
 export const settingsService = new SettingsService();
 export const configService = new ConfigService();
-export { featureService, themeService };
+export { featureService, templateService };
 
 export * from "./interfaces";

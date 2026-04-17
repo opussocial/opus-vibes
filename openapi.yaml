@@ -477,15 +477,15 @@ paths:
           description: Edge deleted
   /theme/home:
     get:
-      summary: Get homepage data for themes
-      tags: [Themes]
+      summary: Get homepage data for the template system
+      tags: [Templates]
       responses:
         200:
           description: Homepage data
   /theme/element/{slug}:
     get:
-      summary: Get element data for theme rendering (by slug or ID)
-      tags: [Themes]
+      summary: Get element data for template rendering (by slug or ID)
+      tags: [Templates]
       parameters:
         - name: slug
           in: path
@@ -496,8 +496,8 @@ paths:
           description: Element data with parent, children, and neighbors
   /theme/element/{type}/{id}:
     get:
-      summary: Get element data matching the frontend URL structure
-      tags: [Themes]
+      summary: Get element data matching the template URL structure
+      tags: [Templates]
       parameters:
         - name: type
           in: path

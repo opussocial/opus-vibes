@@ -17,7 +17,7 @@ import definitionRoutes from "./server/routes/definition";
 import settingsRoutes from "./server/routes/settings";
 import featureRoutes from "./server/routes/features";
 import configRoutes from "./server/routes/config";
-import themeRoutes from "./server/routes/theme";
+import templateRoutes from "./server/routes/template";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +42,7 @@ async function startServer() {
   app.use("/api", settingsRoutes);
   app.use("/api", featureRoutes);
   app.use("/api", configRoutes);
-  app.use("/api", themeRoutes);
+  app.use("/api", templateRoutes);
 
   // Mock "me" endpoint for compatibility if needed, but authRoutes should handle it
   app.get("/api/me", (req: any, res) => {

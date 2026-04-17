@@ -1,10 +1,10 @@
-import { themeService } from "../server/services/ThemeService";
+import { templateService } from "../server/services/TemplateService";
 import { db } from "../server/db";
 import express from "express";
 import supertest from "supertest";
-import themeRouter from "../server/routes/theme";
+import templateRouter from "../server/routes/template";
 
-describe("Theme", () => {
+describe("Template System", () => {
   let statementMock: any;
   let prepareSpy: jasmine.Spy;
 
@@ -17,7 +17,7 @@ describe("Theme", () => {
     prepareSpy = spyOn(db, "prepare").and.returnValue(statementMock);
   });
 
-  describe("ThemeService", () => {
+  describe("TemplateService", () => {
     it("should get element by slug with modular data", async () => {
       const mockElement = { id: 1, name: "Home", slug: "home", type_id: 1 };
       statementMock.get.and.callFake((...args: any[]) => {
@@ -29,7 +29,7 @@ describe("Theme", () => {
       });
       statementMock.all.and.returnValue([{ table_name: "content" }]);
 
-      const result = await themeService.getElementBySlug("home");
+      const result = await templateService.getElementBySlug("home");
 
       expect(result.name).toBe("Home");
       expect(result.content.body).toBe("Welcome");
@@ -37,19 +37,19 @@ describe("Theme", () => {
     });
   });
 
-  describe("Theme Routes", () => {
+  describe("Template Routes", () => {
     let app: express.Application;
 
     beforeEach(() => {
       app = express();
       app.use(express.json());
-      app.use("/api", themeRouter);
+      app.use("/api", templateRouter);
     });
 
     it("GET /theme/element/:slug should return element data", async () => {
-      spyOn(themeService, "getElementBySlug").and.resolveTo({ id: 1, name: "Test" } as any);
-      spyOn(themeService, "getChildren").and.resolveTo([]);
-      spyOn(themeService, "getRelatedElements").and.resolveTo([]);
+      spyOn(templateService, "getElementBySlug").and.resolveTo({ id: 1, name: "Test" } as any);
+      spyOn(templateService, "getChildren").and.resolveTo([]);
+      spyOn(templateService, "getRelatedElements").and.resolveTo([]);
 
       const response = await supertest(app).get("/api/theme/element/test");
 

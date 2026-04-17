@@ -89,7 +89,7 @@ describe("Category B: Types and Roles", () => {
       });
       statementMock.run.and.returnValue({ changes: 1 });
 
-      await adminService.updateRoleTypePermissions("admin", "page", { can_view: true, can_edit: true });
+      await adminService.updateRoleTypePermissions("admin", "page", { can_view: 1, can_edit: 1 } as any);
 
       expect(statementMock.run).toHaveBeenCalledWith(1, 0, 1, 0, 1, 2);
     });

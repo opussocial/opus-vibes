@@ -19,8 +19,8 @@ import { Routes, Route, useNavigate, useLocation, Link, useParams } from "react-
 import { Element, ElementType, ElementDetail, MODULAR_TABLES, User, Role, TypePermission, RelationshipType, GraphEdge } from "./types";
 
 // --- Theme ---
-import { ThemeEngine } from "./theme/ThemeEngine";
-import { ThemeProvider } from "./theme/ThemeContext";
+import { TemplateEngine } from "./theme/TemplateEngine";
+import { TemplateProvider } from "./theme/TemplateContext";
 
 // --- Components ---
 import { AuthScreen } from "./components/AuthScreen";
@@ -88,10 +88,6 @@ export default function App() {
       if (!settings["home_element"]) {
         const homeElement = elements.find(e => e.slug === "home") || elements[0];
         updates["home_element"] = homeElement.slug;
-      }
-      
-      if (!settings["active_theme"]) {
-        updates["active_theme"] = "hostel";
       }
 
       if (Object.keys(updates).length > 0) {
@@ -423,9 +419,9 @@ export default function App() {
 
   if (!isAdminPath) {
     return (
-      <ThemeProvider value={{ elements, types, relTypes, graph, settings, currentUser }}>
-        <ThemeEngine currentUser={currentUser} onLogout={handleLogout} settings={settings} />
-      </ThemeProvider>
+      <TemplateProvider value={{ elements, types, relTypes, graph, settings, currentUser }}>
+        <TemplateEngine currentUser={currentUser} onLogout={handleLogout} settings={settings} />
+      </TemplateProvider>
     );
   }
 

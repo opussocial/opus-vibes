@@ -5,7 +5,7 @@ import authRouter from "../server/routes/auth";
 import elementRouter from "../server/routes/elements";
 import schemaRouter from "../server/routes/schema";
 import configRouter from "../server/routes/config";
-import themeRouter from "../server/routes/theme";
+import templateRouter from "../server/routes/template";
 import definitionRouter from "../server/routes/definition";
 import cookieParser from "cookie-parser";
 
@@ -44,7 +44,7 @@ describe("All Teams Integration Flow", () => {
     app.use("/api/schema", schemaRouter);
     app.use("/api/config", configRouter);
     app.use("/api/definition", definitionRouter);
-    app.use("/api", themeRouter);
+    app.use("/api", templateRouter);
   });
 
   it("should perform a full cross-functional flow", async () => {
@@ -70,7 +70,7 @@ describe("All Teams Integration Flow", () => {
     expect(elRes.status).toBe(200);
     expect(elRes.body.id).toBe(10);
 
-    // 3. Theme: Fetch the element
+    // 3. Template: Fetch the element
     statementMock.get.and.callFake((...args: any[]) => {
       const query = prepareSpy.calls.mostRecent().args[0];
       if (query.includes("FROM elements")) return { id: 10, name: "Home", slug: "home", type_id: 1 };
@@ -79,9 +79,9 @@ describe("All Teams Integration Flow", () => {
       return null;
     });
     statementMock.all.and.returnValue([]);
-    const themeRes = await supertest(app).get("/api/theme/element/home");
-    expect(themeRes.status).toBe(200);
-    expect(themeRes.body.element.name).toBe("Home");
+    const templateRes = await supertest(app).get("/api/theme/element/home");
+    expect(templateRes.status).toBe(200);
+    expect(templateRes.body.element.name).toBe("Home");
 
     // 4. Config: Update site name
     const configRes = await supertest(app)

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { Element, ElementType, RelationshipType, GraphEdge, User } from "../types";
 
-interface ThemeContextData {
+interface TemplateContextData {
   elements: Element[];
   types: ElementType[];
   relTypes: RelationshipType[];
@@ -10,7 +10,7 @@ interface ThemeContextData {
   currentUser: User | null;
 }
 
-interface ThemeContextType extends ThemeContextData {
+interface TemplateContextType extends TemplateContextData {
   // WP-like helpers
   get_element: (slug: string) => Element | undefined;
   get_elements_by_type: (typeSlug: string) => Element[];
@@ -25,14 +25,14 @@ interface ThemeContextType extends ThemeContextData {
   get_posts: (args?: { type?: string, status?: string, limit?: number, offset?: number }) => Element[];
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const TemplateContext = createContext<TemplateContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ 
+export const TemplateProvider = ({ 
   children, 
   value 
 }: { 
   children: ReactNode, 
-  value: ThemeContextData 
+  value: TemplateContextData 
 }) => {
   const { elements, types, relTypes, graph, settings } = value;
 
@@ -117,7 +117,7 @@ export const ThemeProvider = ({
     return filtered;
   };
 
-  const contextValue: ThemeContextType = {
+  const contextValue: TemplateContextType = {
     ...value,
     get_element,
     get_elements_by_type,
@@ -133,16 +133,16 @@ export const ThemeProvider = ({
   };
 
   return (
-    <ThemeContext.Provider value={contextValue}>
+    <TemplateContext.Provider value={contextValue}>
       {children}
-    </ThemeContext.Provider>
+    </TemplateContext.Provider>
   );
 };
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
+export const useTemplate = () => {
+  const context = useContext(TemplateContext);
   if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    throw new Error("useTemplate must be used within a TemplateProvider");
   }
   return context;
 };

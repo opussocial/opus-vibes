@@ -69,7 +69,7 @@ describe("Interaction Routes", () => {
   });
 
   it("GET /api/interaction-types should return types", async () => {
-    spyOn(interactionService, "getInteractionTypes").and.resolveTo([{ id: 1, name: "like", icon: "heart" }]);
+    spyOn(interactionService, "getInteractionTypes").and.resolveTo([{ id: 1, name: "like", icon: "heart", description: "desc" }]);
     
     const response = await supertest(app).get("/api/interaction-types");
     

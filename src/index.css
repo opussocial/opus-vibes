@@ -5,15 +5,8 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", serif;
-}
-
-@theme {
-  --font-admin: "Source Sans Pro", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Anton", sans-serif;
-  --font-magazine: "Inter", sans-serif;
-  --font-serif: "Libre Baskerville", serif;
-  --font-hostel: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+  --font-display: "Anton", sans-serif;
   
   --color-marine: #002366;
   --color-marine-light: #003399;

@@ -230,37 +230,7 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
       </div>
 
       {scope === "global" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <Palette className="text-marine" size={24} />
-              <h3 className="text-lg font-bold">Active Theme</h3>
-            </div>
-            <p className="text-sm text-zinc-500">Select the active theme for your public catalog.</p>
-            <div className="flex gap-3">
-              <select
-                value={settings["active_theme"] || "default"}
-                onChange={async (e) => {
-                  const val = e.target.value;
-                  await fetch(`/api/settings/active_theme`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ value: val })
-                  });
-                  fetchSettings();
-                }}
-                className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/5 font-bold text-marine"
-              >
-                <option value="default">Default Theme (Modern)</option>
-                <option value="tailwind">Tailwind Theme (SaaS)</option>
-                <option value="bootstrap">Bootstrap Theme (Classic)</option>
-                <option value="magazine">Magazine Theme (Editorial)</option>
-                <option value="hostel">Hostel Theme (CMS Dashboard)</option>
-                <option value="bootstrap-barebones">Bootstrap Barebones (Barebones)</option>
-              </select>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
           <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-4">
             <div className="flex items-center gap-3">
               <Globe className="text-marine" size={24} />
@@ -281,7 +251,7 @@ export const SettingsManager = ({ types, currentUser, hasPermission, initialScop
                 }}
                 className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-marine/5 font-bold text-marine"
               >
-                <option value="">Default (First Hostel found)</option>
+                <option value="">Default (First found)</option>
                 {elements.map(el => (
                   <option key={el.id} value={el.slug}>{el.name} ({el.type_name})</option>
                 ))}

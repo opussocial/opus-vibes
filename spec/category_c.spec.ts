@@ -1,4 +1,4 @@
-import { settingsService, featureService, configService, queueService, themeService } from "../server/services";
+import { settingsService, featureService, configService, queueService, templateService } from "../server/services";
 import { db } from "../server/db";
 import express from "express";
 import supertest from "supertest";
@@ -6,7 +6,7 @@ import settingsRouter from "../server/routes/settings";
 import configRouter from "../server/routes/config";
 import tasksRouter from "../server/routes/tasks";
 import featuresRouter from "../server/routes/features";
-import themeRouter from "../server/routes/theme";
+import templateRouter from "../server/routes/template";
 import cookieParser from "cookie-parser";
 
 describe("Category C: Settings, Features & Config", () => {
@@ -99,7 +99,7 @@ describe("Category C: Settings, Features & Config", () => {
     });
   });
 
-  describe("ThemeService (Public Data)", () => {
+  describe("TemplateService (Public Data)", () => {
     it("should get element by slug with modular data, parent, children, and neighbors", async () => {
       statementMock.get.and.callFake(() => {
         const query = prepareSpy.calls.mostRecent().args[0].toLowerCase().replace(/\s+/g, " ");
@@ -117,7 +117,7 @@ describe("Category C: Settings, Features & Config", () => {
         return [];
       });
 
-      const element = await themeService.getElementBySlug("test");
+      const element = await templateService.getElementBySlug("test");
       expect(element).not.toBeNull();
       expect(element.slug).toBe("test");
       expect(element.content.body).toBe("Hello");
@@ -154,7 +154,7 @@ describe("Category C: Settings, Features & Config", () => {
       app.use("/api", configRouter);
       app.use("/api", tasksRouter);
       app.use("/api", featuresRouter);
-      app.use("/api", themeRouter);
+      app.use("/api", templateRouter);
     });
 
     it("GET /api/settings should return settings", async () => {
@@ -187,9 +187,9 @@ describe("Category C: Settings, Features & Config", () => {
     });
 
     it("GET /api/theme/element/:slug should return element", async () => {
-      spyOn(themeService, "getElementBySlug").and.resolveTo({ id: 1, slug: "test" } as any);
-      spyOn(themeService, "getChildren").and.resolveTo([]);
-      spyOn(themeService, "getRelatedElements").and.resolveTo([]);
+      spyOn(templateService, "getElementBySlug").and.resolveTo({ id: 1, slug: "test" } as any);
+      spyOn(templateService, "getChildren").and.resolveTo([]);
+      spyOn(templateService, "getRelatedElements").and.resolveTo([]);
       const response = await supertest(app).get("/api/theme/element/test");
       expect(response.status).toBe(200);
       expect(response.body.element.slug).toBe("test");

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { get_header, get_footer, the_title, the_content, the_children, the_neighbors, the_parent } from "../../TemplateTags";
+import { get_header, get_footer } from "./TemplateTags";
 
 // Import templates
 import { 

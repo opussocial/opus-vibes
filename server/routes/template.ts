@@ -1,9 +1,13 @@
 import express from "express";
-import { themeService } from "../services/ThemeService";
+import { templateService } from "../services/TemplateService";
 import { featureService } from "../services/FeatureService";
 import { db } from "../db";
 
 const router = express.Router();
+
+/**
+ * Public routes for the modular template system.
+ */
 
 router.get("/theme/home", async (req, res) => {
   try {
@@ -15,7 +19,7 @@ router.get("/theme/home", async (req, res) => {
       
       if (setting) {
         const slug = JSON.parse(setting.value);
-        const element = await themeService.getElementBySlug(slug);
+        const element = await templateService.getElementBySlug(slug);
         if (element) {
           return res.json({ type: "element", data: element });
         }
@@ -23,7 +27,6 @@ router.get("/theme/home", async (req, res) => {
       return res.status(404).json({ error: "Homepage disabled and no home_element found" });
     }
 
-    // Default homepage data (could be a list of featured elements or just a flag)
     res.json({ type: "default", message: "Default homepage enabled" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -32,12 +35,11 @@ router.get("/theme/home", async (req, res) => {
 
 router.get("/theme/element/:slug", async (req, res) => {
   try {
-    const element = await themeService.getElementBySlug(req.params.slug);
+    const element = await templateService.getElementBySlug(req.params.slug);
     if (!element) return res.status(404).json({ error: "Element not found" });
     
-    // Also fetch children and related elements for convenience in templates
-    const children = await themeService.getChildren(element.id);
-    const related = await themeService.getRelatedElements(element.id);
+    const children = await templateService.getChildren(element.id);
+    const related = await templateService.getRelatedElements(element.id);
     
     res.json({ 
       element,
@@ -49,14 +51,13 @@ router.get("/theme/element/:slug", async (req, res) => {
   }
 });
 
-// Alias for the new frontend structure
 router.get("/theme/element/:type/:id", async (req, res) => {
   try {
-    const element = await themeService.getElementBySlug(req.params.id);
+    const element = await templateService.getElementBySlug(req.params.id);
     if (!element) return res.status(404).json({ error: "Element not found" });
     
-    const children = await themeService.getChildren(element.id);
-    const related = await themeService.getRelatedElements(element.id);
+    const children = await templateService.getChildren(element.id);
+    const related = await templateService.getRelatedElements(element.id);
     
     res.json({ 
       element,

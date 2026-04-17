@@ -1,5 +1,5 @@
 import React from "react";
-import { the_title, the_content, the_children, the_neighbors, the_parent } from "../../../TemplateTags";
+import { the_title, the_content, the_children, the_neighbors, the_parent } from "../TemplateTags";
 
 export const DefaultTemplate = ({ element }: any) => (
   <article className="max-w-4xl mx-auto">
@@ -37,7 +37,7 @@ export const HostelTemplate = ({ element }: any) => (
         <div className="space-y-4">
           <div>
             <label className="block text-xs uppercase text-gray-400 font-bold">Location</label>
-            <div className="font-medium">{element.location?.city || "Unknown"}</div>
+            <div className="font-medium">{element.place?.address || "Unknown"}</div>
           </div>
           {the_neighbors(element)}
         </div>

@@ -20,7 +20,7 @@ describe("Elements", () => {
 
   describe("ElementService", () => {
     it("should get elements based on allowed types", async () => {
-      const mockElements = [{ id: 1, name: "Element 1", type_id: 1 }];
+      const mockElements = [{ id: 1, name: "Element 1", type_id: 1, type_name: "T", type_slug: "t", slug: "e1", created_at: "", updated_at: "" }] as any[];
       statementMock.all.and.returnValue(mockElements);
 
       const result = await elementService.getElements([1], 123, false);
@@ -34,7 +34,7 @@ describe("Elements", () => {
     });
 
     it("should get root elements", async () => {
-      const mockRoots = [{ id: 1, name: "Root", parent_id: null }];
+      const mockRoots = [{ id: 1, name: "Root", parent_id: null, type_id: 1, type_name: "T", type_slug: "t", slug: "r1", created_at: "", updated_at: "" }] as any[];
       statementMock.all.and.returnValue(mockRoots);
 
       const result = await elementService.getRootElements([1], 123, false);
